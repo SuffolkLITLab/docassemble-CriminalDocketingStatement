@@ -1,0 +1,860 @@
+
+---
+include:
+  - docassemble.AssemblyLine:assembly_line.yml
+  - docassemble.ALAnyState:any_state.yml
+  - docassemble.ALMassachusetts:al_massachusetts.yml
+  - docassemble.MassAccess:massaccess.yml
+---
+metadata:
+  title: >-
+    Criminal docketing statement
+  short title: >-
+    Criminal docketing statement
+  description: |-
+    Criminal docketing statement
+  can_I_use_this_form: |
+  before_you_start: |
+    Before you get started, you need to...
+  when_you_are_finished: |
+  efiling_enabled: False
+  integrated_efiling: False
+  integrated_email_filing: False
+  requires_notarization: False
+  unlisted: False
+  landing_page_url: >-
+    https://courtformsonline.org/
+  maturity: production
+  estimated_completion_minutes: ""
+  estimated_completion_delta: ""
+  LIST_topics:
+    - "CO-00-00-00-00"
+  tags:
+    - "CO-00-00-00-00"
+  authors:
+    -  
+  original_form: []
+  original_form_published_on: ""
+  allowed_courts: []
+  typical_role: "unknown"
+  al_weaver_version: "2.1.0"
+  generated_on: "2026-02-25"
+  languages:
+    - en
+  jurisdiction: "NAM-US"
+  review_date: 2026-02-25
+  form_titles:
+    - Criminal docketing statement
+  form_numbers: []
+  update_notes: |
+---
+code: |
+  # This controls the default country and list of states in address field questions
+  AL_DEFAULT_COUNTRY = "US"
+---
+code: |
+  # This controls the default state in address field questions
+  AL_DEFAULT_STATE = ""
+---
+code: |
+  github_repo_name =  'docassemble-CriminalDocketingStatement'
+---
+code: |
+  al_form_type = "other" 
+---
+# sections:
+#   - people: People & Contacts
+#   - case_details: Case Details
+#   - service_and_notice: Service & Notice
+#   - review_criminal_docketing_statement: Review your answers
+---
+comment: |
+  Controls order and branching logic for questions specific to this form
+id: interview_order_criminal_docketing_statement
+code: |
+  # Set the allowed courts for this interview
+  allowed_courts = []
+  # Below sets the user_role and user_ask_role by asking a question.
+  # You can set user_ask_role directly instead to either 'plaintiff' or 'defendant'
+  
+  users.there_is_another = False
+
+   # user information
+  
+  filer_role
+  users[0].name.first
+  if filer_role == "attorney":
+    appellant_name
+    attorney_bbo
+
+  users[0].address.address
+  users[0].phone_number
+
+  
+  appellant_is_defendant
+  defendant_incarcerated
+  if appellant_is_defendant and filer_role == "pro_se":
+    defendant_address = users[0].address
+  else:
+    defendant_address.address
+  
+  #   # case info
+  appeals_docket_number
+  case_caption
+  court_department 
+  lower_docket_number
+
+  # # judge information
+  info_judge1
+  more_judges_1
+
+  if has_judge2:
+    info_judge2
+    more_judges_2
+  else:
+    judge2 = judge2_role = "N/A"
+    judge3 = judge3_role = "N/A"
+
+  if has_judge2 and has_judge3:
+    info_judge3
+  else:
+    judge3 = judge3_role = "N/A"
+
+   # impoundement info  
+  record_impounded
+  if record_impounded:
+    fully_impounded
+    impoundment_documents
+    impoundment_details
+
+  # # case and appeal information
+  nature_of_case
+  if nature_of_case == "Possession, Other": 
+    possession_other
+  nature_of_appeal
+  appeal_taken_from
+  motion_suppress
+  if motion_suppress: 
+    findings_type
+  offense_information
+  # defendant_incarcerated
+  # defendant_address
+  if sentence_stayed:
+    stay_order_date
+
+  # # related appeals details 
+  related_appeals_parties
+  related_appeals_issues
+  if related_appeals_issues or related_appeals_parties:
+    related_appeals_details
+
+  # # certificate of service 
+  service_type
+  parties_to_be_served
+  service_date
+  
+  # # actual signature 
+  users[0].signature
+  
+  interview_order_criminal_docketing_statement = True
+---
+comment: |
+  This block includes the logic for standalone interviews.
+  Delete mandatory: True to include in another interview
+mandatory: True
+code: |
+  al_intro_screen
+  criminal_docketing_statement_intro
+  interview_order_criminal_docketing_statement
+  signature_date
+  # Store anonymous data for analytics / statistics
+  store_variables_snapshot(
+      persistent=True,
+      data={
+          "zip": showifdef("users[0].address.zip"),
+          "reached_interview_end": True,
+      },
+  )
+  criminal_docketing_statement_download
+---
+id: Criminal_docketing_statement
+continue button field: criminal_docketing_statement_intro
+question: |
+  Criminal Docketing Statement
+subquestion: |
+
+  This interview will help you get a Criminal Docketing Statement.
+
+    This page will help you to fill out a Criminal Docketing Statement to the Appeals Court. If you are appealing a judgment of your case, you should submit this form within 14 days of the Notice of Entry of the Appeal.
+  
+  It helps to have court information about your trial court case being appealed with you now, as you complete this form.
+
+  Each appellant or cross-appellant, other than a self-represented litigant who is incarcerated, is required to submit the attached docketing statement within fourteen days of issuance of the notice of entry of the appeal. See M.A.C. Rule 10.0.
+
+  Most people take about 30 minutes to complete this interview.
+  
+---
+id: filer_role_screen
+question: |
+  Who is filing this Civil Docketing Statement?
+fields:
+  - no label: filer_role
+    input type: radio
+    choices:
+      - I am an attorney representing the appellant: attorney
+      - I am self-represented (pro se) and I am the appellant: pro_se
+---
+id: filer_name_screen
+question: |
+  What is your name?
+subquestion: |
+  % if filer_role == "attorney":
+  If you are the attorney representing the appellant, please enter your name.
+  % else:
+  Enter **your** name (you are the appellant).
+  % endif
+fields:
+  - First name: users[0].name.first
+  - Middle name: users[0].name.middle
+    required: False
+  - Last name: users[0].name.last
+---
+id: defendant_questions
+question: |
+  Defendant Information 
+subquestion: |
+  % if filer_role == "attorney":
+  Was your client the defendant in the trial court case?
+  % else: 
+  Were you the defendant in the trial court case? 
+  % endif
+yesno: appellant_is_defendant
+---
+id: defendant_name_screen
+question: |
+  % if filer_role == "attorney":
+  What is the defendant’s name in the trial court case?
+  % else:
+  What is the defendant’s name in the trial court case?
+  % endif
+fields:
+  - Defendant name: defendant_name
+---
+# ---
+# id: defendant_questions
+# question: |
+#   Was your client the defendant in the trial court case? 
+# yesno: client_is_defendant
+---
+id: appellant_name_screen
+question: |
+  What is the appellant's name?
+fields:
+  - Appellant name: appellant_name
+#show if:
+#  variable: filer_role
+#  is: attorney
+---
+# id: appellant_is_defendant
+# question: |
+#   Is the appellant the defendant in the trial court case?
+# subquestion: |
+#   For most defendant appeals, the appellant **is** the defendant.
+#   For a Commonwealth's appeal, the appellant is usually **not** the defendant.
+# yesno: appellant_is_defendant
+---
+id: attorney_bbo_screen
+question: |
+  Please enter your BBO number
+fields:
+  - BBO number: attorney_bbo
+# show if:
+#   variable: filer_role
+#   is: attorney
+---
+id: case_info_screen
+question: |
+  Please enter the docket number assigned from the appeals court. 
+fields:
+  - "Appeal docket number": appeals_docket_number
+---
+id: court_department
+question: |
+  Select the court that made the decision you are appealing.
+fields:
+  - no label: court_department
+    datatype: object
+    choices: all_courts     
+---
+id: lower_docket_number
+question: |
+  Please enter the lower court docket number from the case you are appealing. 
+fields:
+  - "Lower Court Docket Number": lower_docket_number
+---
+id: filer_contact
+question: |
+  Please Enter Your Contact Information 
+fields:
+  - Address: users[0].address.address
+  - City: users[0].address.city
+  - State: users[0].address.state
+    default: MA
+  - Zip: users[0].address.zip
+  - Telephone: users[0].phone_number
+  - Email: users[0].email
+    
+# id: defendant_address
+# question: |
+#   what is the defendant's address? 
+# fields: 
+#   - Address: def.address.address
+#   - City: def.address.city
+#   - State: def.address.state
+#   - Zip: def.address.zip
+
+---
+id: info_judge1
+question: |
+  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+subquestion: |
+  If a judge ruled on a motion, but you are not appealing that ruling, the judge need not be listed. If there is more than one Judge whose order or judgment is at issue, you will have an opportunity to add their name later. 
+fields:
+  - Judge name (first and last): judge1
+  - Judge role: judge1_role
+    datatype: dropdown
+    choices:
+      - Entered Judgment
+      - Heard Motion
+      - Reported Case or Question
+      - Trial Judge
+continue button field: info_judge1
+---
+id: more_judges_1
+question: |
+  Is there another judge whose order or judgment is at issue?
+yesno: has_judge2
+continue button field: more_judges_1
+---
+id: info_judge2
+question: |
+  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+subquestion: |
+  If a judge ruled on a motion, but you are not appealing that ruling, the judge need not be listed. If there is more than one Judge whose order or judgment is at issue, you will have an opportunity to add their name later. 
+fields:
+  - Judge name (first and last): judge2
+  - Judge role: judge2_role
+    datatype: dropdown
+    choices:
+      - Entered Judgment
+      - Heard Motion
+      - Reported Case or Question
+      - Trial Judge
+continue button field: info_judge2
+---
+id: more_judges_2
+question: |
+  Is there another judge whose order or judgment is at issue?
+yesno: has_judge3
+continue button field: more_judges_2
+---
+id: info_judge3
+question: |
+  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+fields:
+  - Judge name (first and last): judge3
+  - Judge role: judge3_role
+    datatype: dropdown
+    choices:
+      - Entered Judgment
+      - Heard Motion
+      - Reported Case or Question
+      - Trial Judge
+continue button field: info_judge3
+---
+id: impoundment_checkbox
+question: |
+  Was the case or any information in the record designated as impounded in the lower court?
+subquestion: |
+  For the purposes of this form, the term "impounded" includes any portion of the record that is impounded, sealed, deemed confidential, or excluded from public access by statute, court order, rule, or standing order.
+yesno: record_impounded
+---
+id: fully_impounded
+question: |
+  Was the entire case fully impounded? 
+yesno: fully_impounded
+---
+id: impoundment_documents
+question: |
+  Please list which document(s) are impounded or partially impounded.
+fields:
+  - Documents: impoundment_documents 
+    datatype: area
+---
+id: impoundment_details_screen
+question: |
+  Please select the authority for why the document(s) is impounded. 
+
+fields:
+  - Impoundment authority: impoundment_details
+    datatype: checkboxes
+    choices: 
+      - Abortion consent forms and materials. G. L. c. 112, § 12S. 
+      - Abuse Prevention Orders. G. L. c. 209A, § 8.
+      - Address Confidentiality Program Affidavits. S.J.C. Rule 1:20; G. L. c. 9A; 950 Code Mass. Regs. § 130. 
+      - Adoptions. G. L. c. 210, § 5C.
+      - Affidavits of Indigency. By Order of the S.J.C. on the Affidavit of Indigency form.
+      - Alcohol and drug abuse program and treatment records. 42 U.S.C. § 1175, 290 dd-3. 
+      - Appeals from the Sex Offender Registry Board. G. L. c. 6, § 178M.
+      - Board of Bar Overseer proceedings. S.J.C. Rule 4:01, § 20(1).
+      - Child in Need of Services/Child Requiring Assistance. G. L. c. 119, § 39E-39I. 
+      - Child Protection Orders. G. L. c. 119, § 38.
+      - Commission on Judicial Conduct Proceedings. G. L. c. 211C, § 6.
+      - Court Order of Impoundment
+      - Delinquency Proceedings. G. L. c. 119, § 60A.
+      - Department of Workforce Development Hearings (unemployment hearings). G. L. c. 151A, § 46. 
+      - Financial statements. Supplemental Probate and Family Court Rule 401(d).
+      - Grand Jury minutes or documents. G. L. c. 268, § 13D(e).
+      - Guardian ad Litem Reports. Probate and Family Court Standing Order 2-08. 
+      - Harassment Prevention Orders. G. L. c. 258E, § 10.
+      - Inquest Report and Transcript. G. L. c. 38, § 10; In re Globe Newspaper Co., Inc., 461 Mass. 113 (2011). 
+      - Juror Questionnaires. G.L. c. 234A, §§ 23, 33.
+      - Juvenile Trials. G. L. c. 119, § 65. 
+      - Mediator Records. G. L. c. 233, § 23C.
+      - Medical Certificates and Clinical Team Reports. Probate and Family Court Standing Order 5-08. 
+      - Medical, Health and Hospital Records. G. L. c. 111, § 70, § 70E(b).
+      - Mental Health Reports. G. L. c. 123, §§ 1-18, 35.
+      - Medical Peer Review Committee. G. L. c. 111, § 204. 
+      - Paternity actions. G. L. c. 209C, § 13.
+      - Pending or Denied Criminal Complaint Applications. District Court Standards of Judicial Practice, The Complaint Procedure §§ 3:15 and 5:02 (rev. 2008).
+      - Personal Medical Information. Probate and Family Court Standing Order 1-09, Article V of G.L. c. 190B. 
+      - Photographs of unsuspecting nude person. G. L. c. 272, § 105(g).
+      - Presentence Probation Reports. Mass. R. Crim. P. 28(d)(3); Commonwealth v. Martin, 355 Mass. 296 (1969) 
+      - Probation Records. G. L. c. 276, § 100.
+      - Psychotherapist Treatment Records. G.L. c. 112, § 129A, except as provided by G.L. c. 233, § 20(b).
+      - Qualified Domestic Relation Orders. Probate and Family Court Standing Order 3-08.
+      - Records deposited with the clerk-magistrate as potential exhibits. See generally G. L. c. 233, § 79J; G.L. c. 233, § 79; Commonwealth v. Dwyer, 448 Mass. 122, 148-149 (2006).
+      - Rights afforded victims, witnesses, or family members. G. L. c. 258B, § 3(h). 
+      - School records. G. L. c. 71, § 34H; G. L. c. 208, § 31.
+      - Search Warrant, application, or affidavit, before return. G. L. c. 276, § 2B. 
+      - Social Worker records. G. L. c. 112, § 135A.
+      - Trade secrets and other confidential matters in connection with discovery. Mass. R. Civ. P. 26(c)(7).
+      - Victim's name in Sexual Assault Record. G. L c. 265, § 24C; G. L. c. 264, §§ 13B, 13B ½, 13B ¾; G. L. c. 265, §§ 22, 23, 23A, 23B; G. L. c. 265, §§ 22A, 22B, 22C; G. L. c. 265, § 24; G. L. c. 265, § 24B.
+      - Victim program locations. G. L. c. 233, §§ 20J and 20K. 
+    none of the above: False
+
+---
+id: Nature of the Case
+question: |
+  From the dropdown menu, please select the case nature that most closely describes the case being appealed.
+fields:
+  - no label: nature_of_case
+    choices:
+      - Conditional Plea
+      - Crime against property
+      - Juvenile Delinquency/ Youthful Offender
+      - Manslaughter
+      - Motor Vehicle Offense
+      - Murder, second degree
+      - Possession, Drugs 
+      - Possession, Guns
+      - Possession, Pornography 
+      - Possession, Other 
+      - Probation/restitution
+      - Public order offense
+      - Reported question
+      - Sealing/expungement
+      - Sexual offense
+      - Other
+  - Please specify: nature_of_case_other
+    required: False
+    show if:
+      variable: nature_of_case
+      is: Other
+---
+id: Possession_other 
+question: |
+  You selected "possession, other" on the previous screen. Please specify. 
+fields: 
+  - Please specify the possession offense: possession_other
+---
+id: nature_of_appeal
+question: |
+  Please select the nature of the appeal. 
+subquestion: |
+  A **Commonwealth’s Appeal** is when the prosecution, not the defendant, is the party appealing.
+
+  A **Defendant’s Direct Appeal** is the first appeal a defendant files after being convicted or sentenced.
+
+  A **Defendant’s Collateral Appeal** is different from a direct appeal. It is usually filed after the direct appeal has been decided or after the time to file one has passed. It is called collateral because it challenges the conviction through a separate post-conviction process rather than through the standard direct appeal.
+
+fields:
+  - Nature of the appeal: nature_of_appeal
+    datatype: radio
+    choices:
+      - Commonwealth's Appeal: commonwealth
+      - Defendant's Direct Appeal: direct
+      - Defendant's Collateral Appeal: collateral
+---
+id: appeal_taken_from
+question: |
+   What type of decision are you appealing?
+subquestion: |
+  Choose the stage of the case or type of decision you are asking the Appeals Court to review.
+fields:
+  - Appeal taken from: appeal_taken_from
+    datatype: checkboxes
+    choices:
+      - Pretrial Order: pretrial
+      - Jury Trial: jury
+      - Non-Jury Trial: non_jury
+      - Post-Conviction Order: post_conviction
+    none of the above: False
+---
+id: motion_suppress
+question: |
+  If the appeal involves a motion to suppress, did the judge enter findings?
+subquestion: |
+  A motion to suppress is a request made to the court, typically by the defendant, asking the judge to exclude certain evidence from being used at trial because it was obtained in violation of the defendant’s constitutional or statutory rights.
+
+  If the judge grants the motion, the prosecution cannot use that evidence at trial. If the judge denies the motion, the evidence is admitted, but the defendant may challenge that ruling on appeal.
+
+  When a judge “enters findings” on a motion to suppress, the judge makes an official record explaining both what facts the court believes occurred and how the law applies to those facts. 
+yesno: motion_suppress
+ 
+---
+id: findings_type
+question: |
+  Are the findings the judge entered from the motion to suppress written or transcribed? 
+subquestion: |
+    Findings can be **written** in a formal order or spoken in court and later typed up in a transcript (**transcribed**).
+  
+fields:
+  - Are the findings written or transcribed?: findings_type
+    datatype: radio
+    choices:
+      - Written: written
+      - Transcribed: transcribed
+---
+id: offense_information
+question: |
+  List each offense charged, its disposition, and any sentence imposed. 
+subquestion: |
+  Please list each offense charged, its disposition and the sentence imposed in the proceedings below, even where the disposition of the particular charge is not at issue in the appeal. Do not include charges the records of which have been sealed.
+fields:
+  - Offense Information: offense_information 
+    datatype: area
+---
+id: defendant_incarcerated
+question: |
+  Is the Defendant incarcerated? 
+yesno: defendant_incarcerated
+---
+# id: defendant_address
+# question: |
+#   Please enter the Defendant’s current address
+# fields:
+#   - Current address: defendant_address
+#     datatype: address
+
+id: defendant_address
+question: |
+  Please enter the defendant’s current address
+fields:
+  - Street address: defendant_address.address
+  - Unit (optional): defendant_address.unit
+    required: False
+  - City: defendant_address.city
+  - State: defendant_address.state
+  - Zip: defendant_address.zip
+---
+id: sentence_stayed
+question: |
+  Is there a current order staying execution of the sentence?
+subquestion: |
+  An order staying execution of the sentence means the judge has temporarily paused the sentence from taking effect.
+yesno: sentence_stayed
+---
+id: stay_details
+question: |
+  Please enter the stay order details 
+fields:
+  - Order date: stay_order_date
+    datatype: date
+  - Name of the judge who entered the stay: stay_judge_name
+---
+id: case_caption
+question: |
+  Please enter the name of the case as it appears on previous court documents. DO NOT include "Commonwealth v."
+fields:
+  - "Case Name": case_caption
+---
+id: related_appeals_same_parties
+question: |
+  Related appeals
+subquestion: |
+  Are there any pending, past, or anticipated future appeals or original appellate proceedings
+  that involve these parties or this case which have been entered in the Appeals Court or Supreme Judicial Court?
+yesno: related_appeals_parties
+---
+id: related_appeals_related_issues
+question: |
+  Related appeals (continued)
+subquestion: |
+  Do you know of any pending or anticipated appeals raising related issues?
+yesno: related_appeals_issues
+---
+id: related_appeals_details
+question: |
+  Related appeals details
+subquestion: |
+  If you answered yes to either question, provide the case name and docket number
+  and describe the related matter or issue.  
+fields:
+  - Case name(s): related_appeals_case_name
+    datatype: area
+  - Docket number(s): related_appeals_docket
+    datatype: area
+  - Describe the related matter or issue: related_appeals_description
+    datatype: area
+continue button field: related_appeals_details
+---
+
+id: certificate_of_service_date
+question: |
+  Certificate of Service Date
+subquestion: |
+  Please enter the date that you will serve all required parties.
+fields:
+  - Date of certificate of service: service_date
+    datatype: date
+---
+id: method of service 
+question: |
+  Certificate of Service  
+subquestion: |
+  You are required to provide a copy of this Massachusetts Appeals Court Civil Docketing Statement to each attorney or self-represented party in this appeal. 
+  
+  You should not provide a copy of your Affidavit of Indigency, if any, to anyone except the Appeals Court. 
+
+  How will you deliver the required copy of the Massachusetts Appeals Court Civil Docketing Statement to the other parties in this appeal? 
+field: service_type
+dropdown:
+  - Email: email
+  - Mail: mail
+  - Hand delivery: hand 
+
+---
+id: parties to be served
+question: |
+  List the name and address (or email address) of each attorney or self-represented party that you will deliver copies of your Massachusetts Appeals Court Civil Docketing Statement to. 
+subquestion: |
+  If you are serving more than one attorney or party, you may list more than one.
+fields:
+  - no label: parties_to_be_served
+    datatype: area
+---
+
+id: signature fields
+question: |
+  Sign your name
+subquestion: |
+  By signing your name, you agree to
+  our terms and conditions.
+signature: user[0].signature
+---
+# Helper variable for templates + review screen: one "appellant name" to print everywhere
+code: |
+  if filer_role == "pro_se":
+    appellant_name_to_print = users[0].name.full()
+  else:
+    appellant_name_to_print = appellant_name
+---
+
+id: preview criminal_docketing_statement
+question: |
+  Preview your form before you sign it
+subquestion: |
+  Here is a preview of the form you will sign on the next page.   
+  
+  ${ al_court_bundle.as_pdf(key='preview') }
+
+  Click the image to open it in a new tab. Click the "Edit answers" button
+  to edit your answers.
+
+  ${ action_button_html(url_action('review_criminal_docketing_statement'), label='Edit answers', color='info') }
+  
+  Remember to come back to this window to continue and sign your form.
+continue button field: criminal_docketing_statement_preview_question    
+---
+code: |
+  signature_fields = ['users[0].signature']
+---
+code: |
+  # This is a placeholder for the addresses that will be searched
+  # for matching address to court. Edit if court venue is based on 
+  # a different address than the user's
+  [user.address.address for user in users.complete_elements()]
+  addresses_to_search = [user.address for user in users.complete_elements()]
+---
+id: criminal docketing statement review screen
+event: review_criminal_docketing_statement
+question: |
+  Review your answers
+review:
+  - Edit: court_department
+    button: |
+      **Court department name**:
+      ${ court_department }
+  - Edit: judge2_role
+    button: |
+      **Role of second judge**:
+      ${ judge2_role }
+  - Edit: judge3
+    button: |
+      **Third judge's name**:
+      ${ judge3 }
+  - Edit: related_appeals_case_name
+    button: |
+      **Name of related appeal case**:
+      ${ related_appeals_case_name }
+  - Edit: lower_docket_number
+    button: |
+      **Lower court docket number**:
+      ${ lower_docket_number }
+  - Edit: users.revisit
+    button: |
+      **Users**
+
+      % for item in users:
+        * ${ item }
+      % endfor
+  - Edit: service_date
+    button: |
+      **Date of service**:
+      ${ service_date }
+  - Edit: judge2
+    button: |
+      **Second judge's name**:
+      ${ judge2 }
+  - Edit: parties_to_be_served
+    button: |
+      **People to be served**:
+      ${ parties_to_be_served }
+  - Edit: related_appeals_docket
+    button: |
+      **Docket number for related appeal**:
+      ${ related_appeals_docket }
+  - Edit: judge3_role
+    button: |
+      **Role of third judge**:
+      ${ judge3_role }
+  - Edit: appeals_docket_number
+    button: |
+      **Docket number for appeal**:
+      ${ appeals_docket_number }
+  - Edit: related_appeals_description
+    button: |
+      **Description of related appeal**:
+      ${ related_appeals_description }
+  - Edit: case_caption
+    button: |
+      **Title of the case**:
+      ${ case_caption }
+  - Edit: record_impounded
+    button: |
+      **Is record impounded?**:
+      ${ record_impounded }
+  - Edit: judge1
+    button: |
+      **First judge's name**:
+      ${ judge1 }
+  - Edit: judge1_role
+    button: |
+      **Role of first judge**:
+      ${ judge1_role }
+---
+id: edit users
+continue button field: users.revisit
+question: |
+  Edit users
+subquestion: |
+  ${ users.table }
+
+  ${ users.add_action() }
+---
+table: users.table
+rows: users
+columns:
+  - Email: |
+      row_item.email if defined("row_item.email") else ""
+  - Phone number: |
+      row_item.phone_number if defined("row_item.phone_number") else ""
+  - Signature: |
+      row_item.signature if defined("row_item.signature") else ""
+  - Name: |
+      row_item.name_full() if defined("row_item.name.first") else ""
+  - Address: |
+      row_item.address.block() if defined("row_item.address.address") else ""
+edit:
+  - email
+  - phone_number
+  - signature
+  - name.first
+  - address.address
+confirm: True
+
+---
+id: download criminal_docketing_statement
+event: criminal_docketing_statement_download
+question: |
+  All done
+subquestion: |
+  Thank you ${users}. Your form is ready to download and deliver.
+  
+  View, download and send your form below. Click the "Edit answers" button to fix any mistakes.
+
+  ${ action_button_html(url_action('review_criminal_docketing_statement'), label='Edit answers', color='info') }
+  
+  
+  ${ al_user_bundle.download_list_html() }
+  
+
+  ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
+
+progress: 100
+---
+objects: 
+  - defendant_address: ALAddress
+---
+# ALDocument objects specify the metadata for each template
+objects:
+  - criminal_docketing_statement_Post_interview_instructions: ALDocument.using(title="Instructions", filename="criminal_docketing_statement_next_steps.docx", enabled=True, has_addendum=False)
+  - criminal_docketing_statement_attachment: ALDocument.using(title="Criminal docketing statement", filename="criminal_docketing_statement", enabled=True, has_addendum=False, )
+---
+# Bundles group the ALDocuments into separate downloads, such as for court and for the user
+objects:
+  - al_user_bundle: ALDocumentBundle.using(elements=[criminal_docketing_statement_Post_interview_instructions, criminal_docketing_statement_attachment], filename="criminal_docketing_statement", title="All forms to download for your records", enabled=True)
+  - al_court_bundle: ALDocumentBundle.using(elements=[criminal_docketing_statement_attachment],  filename="criminal_docketing_statement", title="All forms to deliver to court", enabled=True)
+---
+# Each attachment defines a key in an ALDocument. We use `i` as the placeholder here so the same template is 
+# used for "preview" and "final" keys, and logic in the template checks the value of 
+# `i` to show or hide the user's signature
+attachment:
+  name: Post-interview-Instructions
+  filename: criminal_docketing_statement_next_steps
+  docx template file: criminal_docketing_statement_next_steps.docx
+  variable name: criminal_docketing_statement_Post_interview_instructions[i]
+  skip undefined: True
+  tagged pdf: True
+---
+attachment:
+  name: criminal docketing statement
+  filename: criminal_docketing_statement
+  variable name: criminal_docketing_statement_attachment[i]
+  skip undefined: True
+  docx template file: criminal_docketing_statement.docx
+  tagged pdf: True
+
+
+
