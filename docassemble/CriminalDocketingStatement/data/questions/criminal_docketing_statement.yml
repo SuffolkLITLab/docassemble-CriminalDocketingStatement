@@ -8,9 +8,9 @@ include:
 ---
 metadata:
   title: >-
-    Criminal docketing statement
+    Criminal Docketing Statement
   short title: >-
-    Criminal docketing statement
+    Criminal Docketing Statement
   description: |-
     Criminal docketing statement
   can_I_use_this_form: |
@@ -57,15 +57,25 @@ code: |
   AL_DEFAULT_STATE = ""
 ---
 code: |
+  interview_short_title = "Criminal Docketing Statement"
+---
+code: |
   github_repo_name =  'docassemble-CriminalDocketingStatement'
 ---
 code: |
   al_form_type = "other" 
 ---
-# sections:
-#   - people: People & Contacts
-#   - case_details: Case Details
-#   - service_and_notice: Service & Notice
+sections:
+  - introduction: Introduction
+  - user_information: User information
+  - defendant_info: Defendant information
+  - court_docket: Trial court & docket details
+  - judges: Judge information
+  - impoundment: Impoundment details
+  - appeal_info: Appeal details
+  - service: Certificate of Service 
+  - signature: Signature
+      
 #   - review_criminal_docketing_statement: Review your answers
 ---
 comment: |
@@ -76,35 +86,43 @@ code: |
   allowed_courts = []
   # Below sets the user_role and user_ask_role by asking a question.
   # You can set user_ask_role directly instead to either 'plaintiff' or 'defendant'
-  
-  users.there_is_another = False
 
-   # user information
-  
+  nav.set_section("introduction")
+  al_intro_screen
+  criminal_docketing_statement_intro
+
+
+  nav.set_section("user_information")
+  users.there_is_another = False
   filer_role
   users[0].name.first
   if filer_role == "attorney":
-    appellant_name
     attorney_bbo
 
+  
   users[0].address.address
   users[0].phone_number
 
-  
+  if filer_role == "attorney":
+    client.name.first
+
+  nav.set_section("defendant_info")
   appellant_is_defendant
   defendant_incarcerated
   if appellant_is_defendant and filer_role == "pro_se":
     defendant_address = users[0].address
   else:
     defendant_address.address
+  offense_information
   
-  #   # case info
+  nav.set_section("court_docket")
   appeals_docket_number
   case_caption
   court_department 
   lower_docket_number
-
-  # # judge information
+  nature_of_case
+  
+  nav.set_section("judges")
   info_judge1
   more_judges_1
 
@@ -120,39 +138,26 @@ code: |
   else:
     judge3 = judge3_role = "N/A"
 
-   # impoundement info  
+  nav.set_section("impoundment") 
   record_impounded
   if record_impounded:
-    fully_impounded
-    impoundment_documents
     impoundment_details
 
-  # # case and appeal information
-  nature_of_case
-  if nature_of_case == "Possession, Other": 
-    possession_other
+  nav.set_section("appeal_info")
   nature_of_appeal
   appeal_taken_from
   motion_suppress
-  if motion_suppress: 
-    findings_type
-  offense_information
-  # defendant_incarcerated
-  # defendant_address
-  if sentence_stayed:
-    stay_order_date
-
-  # # related appeals details 
+  sentence_stayed
   related_appeals_parties
-  related_appeals_issues
-  if related_appeals_issues or related_appeals_parties:
-    related_appeals_details
 
+
+  nav.set_section("service")
   # # certificate of service 
   service_type
   parties_to_be_served
   service_date
-  
+
+  nav.set_section("signature")
   # # actual signature 
   users[0].signature
   
@@ -182,10 +187,8 @@ continue button field: criminal_docketing_statement_intro
 question: |
   Criminal Docketing Statement
 subquestion: |
-
-  This interview will help you get a Criminal Docketing Statement.
-
-    This page will help you to fill out a Criminal Docketing Statement to the Appeals Court. If you are appealing a judgment of your case, you should submit this form within 14 days of the Notice of Entry of the Appeal.
+  
+  This page will help you to fill out a Criminal Docketing Statement to submit to the Appeals Court. If you are appealing a judgment of your case, you should submit this form within 14 days of the Notice of Entry of the Appeal.
   
   It helps to have court information about your trial court case being appealed with you now, as you complete this form.
 
@@ -211,7 +214,7 @@ subquestion: |
   % if filer_role == "attorney":
   If you are the attorney representing the appellant, please enter your name.
   % else:
-  Enter **your** name (you are the appellant).
+  Enter **your** name.
   % endif
 fields:
   - First name: users[0].name.first
@@ -221,66 +224,50 @@ fields:
 ---
 id: defendant_questions
 question: |
-  Defendant Information 
-subquestion: |
   % if filer_role == "attorney":
   Was your client the defendant in the trial court case?
   % else: 
   Were you the defendant in the trial court case? 
   % endif
-yesno: appellant_is_defendant
+fields:
+  - no label: appellant_is_defendant
+    datatype: yesnoradio
 ---
-id: defendant_name_screen
+id: defendant_incarcerated
 question: |
   % if filer_role == "attorney":
-  What is the defendant’s name in the trial court case?
-  % else:
-  What is the defendant’s name in the trial court case?
+  Is your client currently incarcerated?
+  % else: 
+  Are you currently incarcerated? 
   % endif
-fields:
-  - Defendant name: defendant_name
+fields: 
+  - no label: defendant_incarcerated
+    datatype: yesnoradio
 ---
-# ---
-# id: defendant_questions
-# question: |
-#   Was your client the defendant in the trial court case? 
-# yesno: client_is_defendant
----
-id: appellant_name_screen
+id: client_name_screen
 question: |
-  What is the appellant's name?
+  What is your client's name?
 fields:
-  - Appellant name: appellant_name
-#show if:
-#  variable: filer_role
-#  is: attorney
----
-# id: appellant_is_defendant
-# question: |
-#   Is the appellant the defendant in the trial court case?
-# subquestion: |
-#   For most defendant appeals, the appellant **is** the defendant.
-#   For a Commonwealth's appeal, the appellant is usually **not** the defendant.
-# yesno: appellant_is_defendant
+  - First name: client.name.first
+  - Middle name: client.name.middle
+    required: False
+  - Last name: client.name.last
 ---
 id: attorney_bbo_screen
 question: |
-  Please enter your BBO number
+  Enter your BBO number
 fields:
   - BBO number: attorney_bbo
-# show if:
-#   variable: filer_role
-#   is: attorney
 ---
 id: case_info_screen
 question: |
-  Please enter the docket number assigned from the appeals court. 
+   Enter the docket number assigned by appeals court
 fields:
-  - "Appeal docket number": appeals_docket_number
+  - "Appeals docket number": appeals_docket_number
 ---
 id: court_department
 question: |
-  Select the court that made the decision you are appealing.
+  Select the court that made the decision you are appealing
 fields:
   - no label: court_department
     datatype: object
@@ -288,13 +275,13 @@ fields:
 ---
 id: lower_docket_number
 question: |
-  Please enter the lower court docket number from the case you are appealing. 
+   Enter the lower court docket number from the case you are appealing 
 fields:
-  - "Lower Court Docket Number": lower_docket_number
+  - "Lower court docket number": lower_docket_number
 ---
 id: filer_contact
 question: |
-  Please Enter Your Contact Information 
+   Enter your contact information
 fields:
   - Address: users[0].address.address
   - City: users[0].address.city
@@ -304,25 +291,20 @@ fields:
   - Telephone: users[0].phone_number
   - Email: users[0].email
     
-# id: defendant_address
-# question: |
-#   what is the defendant's address? 
-# fields: 
-#   - Address: def.address.address
-#   - City: def.address.city
-#   - State: def.address.state
-#   - Zip: def.address.zip
-
 ---
 id: info_judge1
 question: |
-  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+  Judge information
 subquestion: |
-  If a judge ruled on a motion, but you are not appealing that ruling, the judge need not be listed. If there is more than one Judge whose order or judgment is at issue, you will have an opportunity to add their name later. 
+  Please enter the full name of the Judge whose order or judgment you are appealing and select their role.
+  
+  If a judge ruled on a motion, but you are not appealing that ruling, you do not need to list that judge.
+  
+  If there is more than one Judge whose order or judgment you are appealing, you will have an opportunity to add their name later. 
 fields:
   - Judge name (first and last): judge1
   - Judge role: judge1_role
-    datatype: dropdown
+    datatype: radio
     choices:
       - Entered Judgment
       - Heard Motion
@@ -332,19 +314,23 @@ continue button field: info_judge1
 ---
 id: more_judges_1
 question: |
-  Is there another judge whose order or judgment is at issue?
-yesno: has_judge2
+  Is there another judge whose order or judgment you are appealing?
+fields:
+  - no label: has_judge2
+    datatype: yesnoradio   
 continue button field: more_judges_1
 ---
 id: info_judge2
 question: |
-  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+  Judge information
 subquestion: |
-  If a judge ruled on a motion, but you are not appealing that ruling, the judge need not be listed. If there is more than one Judge whose order or judgment is at issue, you will have an opportunity to add their name later. 
+  Please enter the full name of the Judge whose order or judgment you are appealing and select their role.
+  
+  You will have an opportunity to add another judge on the next screen.  
 fields:
   - Judge name (first and last): judge2
   - Judge role: judge2_role
-    datatype: dropdown
+    datatype: radio
     choices:
       - Entered Judgment
       - Heard Motion
@@ -354,17 +340,21 @@ continue button field: info_judge2
 ---
 id: more_judges_2
 question: |
-  Is there another judge whose order or judgment is at issue?
-yesno: has_judge3
+  Is there another judge whose order or judgment you are appealing?
+fields:
+  - no label: has_judge3
+    datatype: yesnoradio   
 continue button field: more_judges_2
 ---
 id: info_judge3
 question: |
-  Please enter the full name of the Judge whose order or judgment is at issue and select their role.
+  Judge information
+subquestion: |
+  Please enter the full name of the Judge whose order or judgment you are appealing and select their role.
 fields:
   - Judge name (first and last): judge3
   - Judge role: judge3_role
-    datatype: dropdown
+    datatype: radio
     choices:
       - Entered Judgment
       - Heard Motion
@@ -374,27 +364,37 @@ continue button field: info_judge3
 ---
 id: impoundment_checkbox
 question: |
-  Was the case or any information in the record designated as impounded in the lower court?
+  Impoundment information
 subquestion: |
-  For the purposes of this form, the term "impounded" includes any portion of the record that is impounded, sealed, deemed confidential, or excluded from public access by statute, court order, rule, or standing order.
-yesno: record_impounded
----
-id: fully_impounded
-question: |
-  Was the entire case fully impounded? 
-yesno: fully_impounded
----
-id: impoundment_documents
-question: |
-  Please list which document(s) are impounded or partially impounded.
-fields:
-  - Documents: impoundment_documents 
+  Impoundment means that a document or part of a court record is kept confidential and not available to the public. The court restricts access to protect sensitive or private information.
+
+  For this form, impounded documents include any part of the record that is impounded, sealed, or confidential by statute, court order, rule, or standing order. 
+fields:  
+  - Is any part of the record impounded?: record_impounded
+    datatype: yesnoradio
+      
+  - Is the entire case impounded?: fully_impounded
+    datatype: yesnoradio 
+    show if:
+      variable: record_impounded
+      is: True
+  - note: |
+      If the entire case is impounded, type "entire case" below 
+    show if: 
+      variable: record_impounded
+      is: True
+  - List the documents that are impounded: impoundment_documents
     datatype: area
+    show if: 
+      variable: record_impounded
+      is: True
+
 ---
 id: impoundment_details_screen
 question: |
-  Please select the authority for why the document(s) is impounded. 
-
+  Impoundment authority
+subquestion: |
+   Select the authority for why the documents are impounded. You may select more than one. 
 fields:
   - Impoundment authority: impoundment_details
     datatype: checkboxes
@@ -442,11 +442,12 @@ fields:
       - Victim's name in Sexual Assault Record. G. L c. 265, § 24C; G. L. c. 264, §§ 13B, 13B ½, 13B ¾; G. L. c. 265, §§ 22, 23, 23A, 23B; G. L. c. 265, §§ 22A, 22B, 22C; G. L. c. 265, § 24; G. L. c. 265, § 24B.
       - Victim program locations. G. L. c. 233, §§ 20J and 20K. 
     none of the above: False
-
 ---
 id: Nature of the Case
 question: |
-  From the dropdown menu, please select the case nature that most closely describes the case being appealed.
+  What is the case about?
+subquestion: |
+  Select the option that describes what the case was about. If it is not listed, choose "other"
 fields:
   - no label: nature_of_case
     choices:
@@ -467,16 +468,14 @@ fields:
       - Sexual offense
       - Other
   - Please specify: nature_of_case_other
-    required: False
     show if:
       variable: nature_of_case
       is: Other
----
-id: Possession_other 
-question: |
-  You selected "possession, other" on the previous screen. Please specify. 
-fields: 
   - Please specify the possession offense: possession_other
+    show if: 
+      variable: nature_of_case
+      is: Possession, Other
+
 ---
 id: nature_of_appeal
 question: |
@@ -513,28 +512,40 @@ fields:
 ---
 id: motion_suppress
 question: |
-  If the appeal involves a motion to suppress, did the judge enter findings?
+  Motion to suppress 
 subquestion: |
   A motion to suppress is a request made to the court, typically by the defendant, asking the judge to exclude certain evidence from being used at trial because it was obtained in violation of the defendant’s constitutional or statutory rights.
 
   If the judge grants the motion, the prosecution cannot use that evidence at trial. If the judge denies the motion, the evidence is admitted, but the defendant may challenge that ruling on appeal.
 
   When a judge “enters findings” on a motion to suppress, the judge makes an official record explaining both what facts the court believes occurred and how the law applies to those facts. 
-yesno: motion_suppress
- 
----
-id: findings_type
-question: |
-  Are the findings the judge entered from the motion to suppress written or transcribed? 
-subquestion: |
-    Findings can be **written** in a formal order or spoken in court and later typed up in a transcript (**transcribed**).
-  
 fields:
+  - Does the appeal involve a motion to suppress?: motion_suppress
+    datatype: yesnoradio
+  - note: |
+      When a judge “enters findings” on a motion to suppress, the judge makes an official record explaining both what facts the court believes occurred and how the law applies to those facts.
+    show if: 
+      variable: motion_suppress
+      is: True 
+  - Did the judge enter findings?: motion_findings
+    datatype: yesnoradio
+    show if: 
+      variable: motion_suppress
+      is: True
+  - note: |
+      Findings can be **written** in a formal order or spoken in court and later typed up in a transcript (**transcribed**).
+    show if:
+      variable: motion_findings
+      is: True   
   - Are the findings written or transcribed?: findings_type
     datatype: radio
     choices:
       - Written: written
       - Transcribed: transcribed
+    show if:
+      variable: motion_findings
+      is: True
+ 
 ---
 id: offense_information
 question: |
@@ -544,19 +555,8 @@ subquestion: |
 fields:
   - Offense Information: offense_information 
     datatype: area
----
-id: defendant_incarcerated
-question: |
-  Is the Defendant incarcerated? 
-yesno: defendant_incarcerated
----
-# id: defendant_address
-# question: |
-#   Please enter the Defendant’s current address
-# fields:
-#   - Current address: defendant_address
-#     datatype: address
 
+---
 id: defendant_address
 question: |
   Please enter the defendant’s current address
@@ -570,54 +570,65 @@ fields:
 ---
 id: sentence_stayed
 question: |
-  Is there a current order staying execution of the sentence?
+  Stay of execution
 subquestion: |
   An order staying execution of the sentence means the judge has temporarily paused the sentence from taking effect.
-yesno: sentence_stayed
----
-id: stay_details
-question: |
-  Please enter the stay order details 
-fields:
+fields: 
+  - Is there a current order staying execution of the sentence?: sentence_stayed
+    datatype: yesnoradio
+  - note: |
+     Enter the stay order details 
+    show if: 
+      variable: sentence_stayed
+      is: true
   - Order date: stay_order_date
     datatype: date
-  - Name of the judge who entered the stay: stay_judge_name
+    show if: 
+      variable: sentence_stayed
+      is: true    
+  - Name of the judge who entered the order: stay_judge_name
+    show if: 
+      variable: sentence_stayed
+      is: true
 ---
 id: case_caption
 question: |
-  Please enter the name of the case as it appears on previous court documents. DO NOT include "Commonwealth v."
+  Case name
+subquestion: |
+  What is the name of the case as it appears on trial court documents? 
 fields:
-  - "Case Name": case_caption
+  - "Commonwealth v.": case_caption
 ---
 id: related_appeals_same_parties
 question: |
   Related appeals
 subquestion: |
-  Are there any pending, past, or anticipated future appeals or original appellate proceedings
-  that involve these parties or this case which have been entered in the Appeals Court or Supreme Judicial Court?
-yesno: related_appeals_parties
----
-id: related_appeals_related_issues
-question: |
-  Related appeals (continued)
-subquestion: |
-  Do you know of any pending or anticipated appeals raising related issues?
-yesno: related_appeals_issues
----
-id: related_appeals_details
-question: |
-  Related appeals details
-subquestion: |
-  If you answered yes to either question, provide the case name and docket number
-  and describe the related matter or issue.  
-fields:
-  - Case name(s): related_appeals_case_name
+  Appeals may be related because they either involve the same parties or raise the same issue(s)
+fields: 
+  - note: |
+      Are there any **pending, past, or anticipated appeals** or original appellate proceedings that involve these **parties** or this case which have been entered in the Appeals Court or Supreme Judicial Court?
+  - Related Parties?: related_appeals_parties
+    datatype: yesnoradio
+  - note: |
+      Do you know of any **pending or anticipated appeals** raising related **issues**?
+  - Related issues?: related_appeals_issues
+    datatype: yesnoradio
+  - note: |
+      Provide the case name and docket number and describe the related matter or issue.
+    js show if: |
+      val("related_appeals_parties") || val("related_appeals_issues")
+  - Case name: related_appeals_case_name
     datatype: area
-  - Docket number(s): related_appeals_docket
+    js show if: |
+      val("related_appeals_parties") || val("related_appeals_issues")
+  - Docket number: related_appeals_docket
     datatype: area
+    js show if: |
+      val("related_appeals_parties") || val("related_appeals_issues")
   - Describe the related matter or issue: related_appeals_description
     datatype: area
-continue button field: related_appeals_details
+    js show if: |
+      val("related_appeals_parties") || val("related_appeals_issues")
 ---
 
 id: certificate_of_service_date
@@ -662,13 +673,7 @@ subquestion: |
   By signing your name, you agree to
   our terms and conditions.
 signature: user[0].signature
----
-# Helper variable for templates + review screen: one "appellant name" to print everywhere
-code: |
-  if filer_role == "pro_se":
-    appellant_name_to_print = users[0].name.full()
-  else:
-    appellant_name_to_print = appellant_name
+
 ---
 
 id: preview criminal_docketing_statement
@@ -826,6 +831,7 @@ progress: 100
 ---
 objects: 
   - defendant_address: ALAddress
+  - client: Individual
 ---
 # ALDocument objects specify the metadata for each template
 objects:
