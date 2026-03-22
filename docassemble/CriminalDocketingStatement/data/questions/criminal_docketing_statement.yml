@@ -109,6 +109,8 @@ code: |
   nav.set_section("defendant_info")
   appellant_is_defendant
   defendant_incarcerated
+  if defendant_incarcerated: 
+    institution_name
   if appellant_is_defendant and filer_role == "pro_se":
     defendant_address = users[0].address
   else:
@@ -234,11 +236,12 @@ fields:
 ---
 id: defendant_incarcerated
 question: |
-  % if filer_role == "attorney":
-  Is your client currently incarcerated?
-  % else: 
-  Are you currently incarcerated? 
-  % endif
+  Is the defendant in the trial court case currently incarcerated? 
+  # % if filer_role == "attorney":
+  # Is your client currently incarcerated?
+  # % else: 
+  # Are you currently incarcerated? 
+  # % endif
 fields: 
   - no label: defendant_incarcerated
     datatype: yesnoradio
@@ -262,11 +265,11 @@ id: case_info_screen
 question: |
   Docket information
 subquestion: |
-    Enter the Appeals court docket number and the docket number from the lower court. 
+    Enter the Appeals Court docket number and the docket number from the lower court. 
 
     Note: these two are different  
 fields:
-  - Appeals docket number: appeals_docket_number
+  - Appeals Court docket number: appeals_docket_number
   - Lower court docket number: lower_docket_number
 ---
 id: court_department
@@ -562,7 +565,7 @@ fields:
 ---
 id: defendant_address
 question: |
-  Please enter the defendant’s current address
+   Enter the defendant’s current address
 fields:
   - Street address: defendant_address.address
   - Unit (optional): defendant_address.unit
@@ -570,6 +573,18 @@ fields:
   - City: defendant_address.city
   - State: defendant_address.state
   - Zip: defendant_address.zip
+---
+id: defendant_institution
+question: |
+  Institution name
+subquestion: |
+  % if filer_role == "attorney":
+  Enter the name of the institution where your client is incarcerated
+  % else: 
+  Enter the name of the institution where you are incarcerated
+  % endif
+fields: 
+  - Institution name: institution_name
 ---
 id: sentence_stayed
 question: |
