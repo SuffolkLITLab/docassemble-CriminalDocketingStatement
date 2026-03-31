@@ -152,50 +152,50 @@ code: |
   
   offense_information
   
-  # nav.set_section("court_docket")
-  # appeals_docket_number
-  # case_caption
-  # court_department 
-  # nature_of_case
+  nav.set_section("court_docket")
+  appeals_docket_number
+  case_caption
+  court_department 
+  nature_of_case
   
-  # nav.set_section("judges")
-  # info_judge1
-  # more_judges_1
+  nav.set_section("judges")
+  info_judge1
+  more_judges_1
 
-  # if has_judge2:
-  #   info_judge2
-  #   more_judges_2
-  # else:
-  #   judge2 = judge2_role = "N/A"
-  #   judge3 = judge3_role = "N/A"
+  if has_judge2:
+    info_judge2
+    more_judges_2
+  else:
+    judge2 = judge2_role = "N/A"
+    judge3 = judge3_role = "N/A"
 
-  # if has_judge2 and has_judge3:
-  #   info_judge3
-  # else:
-  #   judge3 = judge3_role = "N/A"
+  if has_judge2 and has_judge3:
+    info_judge3
+  else:
+    judge3 = judge3_role = "N/A"
 
-  # nav.set_section("impoundment") 
-  # record_impounded
-  # if record_impounded:
-  #   impoundment_details
+  nav.set_section("impoundment") 
+  record_impounded
+  if record_impounded:
+    impoundment_details
 
-  # nav.set_section("appeal_info")
-  # nature_of_appeal
-  # appeal_taken_from
-  # motion_suppress
-  # sentence_stayed
-  # related_appeals_parties
+  nav.set_section("appeal_info")
+  nature_of_appeal
+  appeal_taken_from
+  motion_suppress
+  sentence_stayed
+  related_appeals_parties
 
 
-  # nav.set_section("service")
-  # # # certificate of service 
-  # service_type
-  # parties_to_be_served
-  # service_date
+  nav.set_section("service")
+  # # certificate of service 
+  service_type
+  parties_to_be_served
+  service_date
 
-  # nav.set_section("signature")
-  # # # actual signature 
-  # users[0].signature
+  nav.set_section("signature")
+  # # actual signature 
+  users[0].signature
   
   interview_order_criminal_docketing_statement = True
 ---
