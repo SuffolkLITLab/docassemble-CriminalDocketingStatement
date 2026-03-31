@@ -108,13 +108,48 @@ code: |
 
   nav.set_section("defendant_info")
   appellant_is_defendant
-  defendant_incarcerated
-  if defendant_incarcerated: 
-    institution_name
-  if appellant_is_defendant and filer_role == "pro_se":
-    defendant_address = users[0].address
-  else:
-    defendant_address.address
+
+
+  if filer_role == "attorney":
+
+    if appellant_is_defendant:
+      defendant_incarcerated
+
+      if defendant_incarcerated:
+        institution_name
+        defendant_address.address
+      else:
+        defendant_address.address
+
+    else:
+      defendant_incarcerated
+
+      if defendant_incarcerated:
+        institution_name
+        defendant_address.address
+      else:
+        defendant_address.address
+
+  else:  # pro_se
+
+    if appellant_is_defendant:
+      defendant_incarcerated
+
+      if defendant_incarcerated:
+        institution_name
+        defendant_address = users[0].address
+      else:
+        defendant_address = users[0].address
+
+    else:
+      defendant_incarcerated
+
+      if defendant_incarcerated:
+        institution_name
+        defendant_address.address
+      else:
+        defendant_address.address
+  
   offense_information
   
   nav.set_section("court_docket")
@@ -236,13 +271,16 @@ fields:
 ---
 id: defendant_incarcerated
 question: |
-  Is the defendant in the trial court case currently incarcerated? 
-  # % if filer_role == "attorney":
-  # Is your client currently incarcerated?
-  # % else: 
-  # Are you currently incarcerated? 
-  # % endif
-fields: 
+  % if filer_role == "attorney" and appellant_is_defendant:
+  Is your client currently incarcerated?
+  % elif filer_role == "attorney" and not appellant_is_defendant:
+  Is the defendant currently incarcerated?
+  % elif filer_role == "pro_se" and appellant_is_defendant:
+  Are you currently incarcerated?
+  % else:
+  Is the defendant currently incarcerated?
+  % endif
+fields:
   - no label: defendant_incarcerated
     datatype: yesnoradio
 ---
@@ -565,25 +603,64 @@ fields:
 ---
 id: defendant_address
 question: |
-   Enter the defendant’s current address
+  % if defendant_incarcerated:
+  Institution address
+  % else:
+  Defendant address
+  % endif
+subquestion: |
+  % if defendant_incarcerated and filer_role == "attorney" and appellant_is_defendant:
+  Enter the address of the institution where your client is incarcerated.
+  % elif defendant_incarcerated and filer_role == "attorney" and not appellant_is_defendant:
+  Enter the address of the institution where the defendant is incarcerated.
+  % elif defendant_incarcerated and filer_role == "pro_se" and appellant_is_defendant:
+  Enter the address of the institution where you are incarcerated.
+  % elif defendant_incarcerated and filer_role == "pro_se" and not appellant_is_defendant:
+  Enter the address of the institution where the defendant is incarcerated.
+  % elif not defendant_incarcerated and filer_role == "attorney" and appellant_is_defendant:
+  Enter your client's current address.
+  % elif not defendant_incarcerated and filer_role == "attorney" and not appellant_is_defendant:
+  Enter the defendant's current address.
+  % elif not defendant_incarcerated and filer_role == "pro_se" and appellant_is_defendant:
+  Enter your current address.
+  % else:
+  Enter the defendant's current address.
+  % endif
 fields:
   - Street address: defendant_address.address
   - Unit (optional): defendant_address.unit
     required: False
   - City: defendant_address.city
   - State: defendant_address.state
+    default: MA
   - Zip: defendant_address.zip
 ---
+# id: defendant_institution
+# question: |
+#   Institution name
+# subquestion: |
+#   % if filer_role == "attorney":
+#   Enter the name of the institution where your client is incarcerated
+#   % else: 
+#   Enter the name of the institution where you are incarcerated
+#   % endif
+# fields: 
+#   - Institution name: institution_name
+
 id: defendant_institution
 question: |
-  Institution name
+  Institution information
 subquestion: |
-  % if filer_role == "attorney":
-  Enter the name of the institution where your client is incarcerated
-  % else: 
-  Enter the name of the institution where you are incarcerated
+  % if filer_role == "attorney" and appellant_is_defendant:
+  Enter the name of the institution where your client is incarcerated.
+  % elif filer_role == "attorney" and not appellant_is_defendant:
+  Enter the name of the institution where the defendant is incarcerated.
+  % elif filer_role == "pro_se" and appellant_is_defendant:
+  Enter the name of the institution where you are incarcerated.
+  % else:
+  Enter the name of the institution where the defendant is incarcerated.
   % endif
-fields: 
+fields:
   - Institution name: institution_name
 ---
 id: sentence_stayed
@@ -852,6 +929,7 @@ progress: 100
 objects: 
   - defendant_address: ALAddress
   - client: Individual
+  - defendant: Individual
 ---
 # ALDocument objects specify the metadata for each template
 objects:
