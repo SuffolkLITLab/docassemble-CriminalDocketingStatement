@@ -235,7 +235,7 @@ subquestion: |
 ---
 id: filer_role_screen
 question: |
-  Who is filing this Civil Docketing Statement?
+  Who is filing this Criminal Docketing Statement?
 fields:
   - no label: filer_role
     input type: radio
@@ -739,11 +739,11 @@ id: method of service
 question: |
   Certificate of Service  
 subquestion: |
-  You are required to provide a copy of this Massachusetts Appeals Court Civil Docketing Statement to each attorney or self-represented party in this appeal. 
+  You are required to provide a copy of this Massachusetts Appeals Court Criminal Docketing Statement to each attorney or self-represented party in this appeal. 
   
   You should not provide a copy of your Affidavit of Indigency, if any, to anyone except the Appeals Court. 
 
-  **How will you deliver the required copy of the Massachusetts Appeals Court Civil Docketing Statement to the other parties in this appeal?** 
+  **How will you deliver the required copy of the Massachusetts Appeals Court Criminal Docketing Statement to the other parties in this appeal?** 
 field: service_type
 dropdown:
   - Email/E-file: email
@@ -755,7 +755,7 @@ id: parties to be served
 question: |
   Service information
 subquestion: |
-  List the name and address (or email address) of each attorney or self-represented party that you will deliver copies of your Massachusetts Appeals Court Civil Docketing Statement to.
+  List the name and address (or email address) of each attorney or self-represented party that you will deliver copies of your Massachusetts Appeals Court Criminal Docketing Statement to.
   
   If you are serving more than one attorney or party, you may list more than one.
 fields:
