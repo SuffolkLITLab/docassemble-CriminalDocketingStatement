@@ -155,7 +155,7 @@ code: |
   nav.set_section("court_docket")
   appeals_docket_number
   case_caption
-  court_department 
+  inst_type 
   nature_of_case
   
   nav.set_section("judges")
@@ -226,12 +226,19 @@ subquestion: |
   
   This page will help you to fill out a Criminal Docketing Statement to submit to the Appeals Court. If you are appealing a judgment of your case, you should submit this form within 14 days of the Notice of Entry of the Appeal.
   
-  It helps to have court information about your trial court case being appealed with you now, as you complete this form.
+  It helps to have court information about your {trial court} case being appealed with you now, as you complete this form.
 
-  Each appellant or cross-appellant, other than a self-represented litigant who is incarcerated, is required to submit the attached docketing statement within fourteen days of issuance of the notice of entry of the appeal. See M.A.C. Rule 10.0.
+  Each {appellant} or {cross-appellant}, other than a self-represented litigant who is incarcerated, is required to submit the attached docketing statement within fourteen days of issuance of the notice of entry of the appeal. See [M.A.C. Rule 10.0](https://www.mass.gov/rules-of-appellate-procedure/appellate-procedure-rule-10-docketing-the-appeal).
 
   Most people take about 30 minutes to complete this interview.
-  
+terms:
+  trial court: |
+    the court that made the decision you are appealing
+  appellant: |
+    The party of the trial court case who is appealing the trial court's decision
+  cross-appellant: |
+    The opposing party of the appellant, that has also decided to appeal the trial court's decision for different reasons than the original appeal.
+
 ---
 id: filer_role_screen
 question: |
@@ -315,13 +322,34 @@ terms:
   lower court docket number: |
     This is your old docket number from the previous court where your case was held
 ---
-id: court_department
+id: court_agency
 question: |
-  Select the court that made the decision you are appealing
-fields:
-  - no label: court_department
+  Is the decision you are appealing from a {court} or an {agency}? 
+fields: 
+  - no label: inst_type
+    datatype: radio
+    choices:
+      - Court
+      - Agency
+
+  - Select the court: court_department
     datatype: object
-    choices: all_courts     
+    choices: all_courts
+    show if:
+      variable: inst_type
+      is: Court
+
+  - Enter the name of the agency: agency_name
+    show if:
+      variable: inst_type
+      is: Agency
+terms:
+  court: |
+    This is the court that made the decision you are appealing, e.g. the District Court, Housing Court, or Probate and Family Court.
+  agency: |
+    These are [state administrative agencies](https://www.mass.gov/service-details/learn-about-appeals-from-administrative-agency-decisions-under-general-laws-c30a). 
+    For example, decisions from the [Department of Children and Families (DCF)](https://www.mass.gov/orgs/massachusetts-department-of-children-families), or the [Department of Transitional Assistance (DTA)](https://www.mass.gov/orgs/department-of-transitional-assistance).
+  
 ---
 # id: lower_docket_number
 # question: |
@@ -540,11 +568,12 @@ subquestion: |
 
 fields:
   - Nature of the appeal: nature_of_appeal
-    datatype: radio
+    datatype: checkboxes
     choices:
-      - Commonwealth's Appeal: commonwealth
-      - Defendant's Direct Appeal: direct
-      - Defendant's Collateral Appeal: collateral
+      - Commonwealth's Appeal
+      - Defendant's Direct Appeal
+      - Defendant's Collateral Appeal
+    none of the above: False
 ---
 id: appeal_taken_from
 question: |
@@ -745,16 +774,20 @@ id: method of service
 question: |
   Certificate of Service  
 subquestion: |
-  You are required to provide a copy of this Massachusetts Appeals Court Criminal Docketing Statement to each attorney or self-represented party in this appeal. 
+  All papers filed in the Appeals Court must be sent to all other parties to the case, or their attorney(s), and filed along with a Certificate of Service stating that you completed this step.  This is called "service," and can be done by email or regular mail. Service through email can only be done if the other party consents. 
   
-  You should not provide a copy of the Affidavit of Indigency, if any, to anyone except the Appeals Court. 
+  If the Certificate of Service is not completed, this filing will not be accepted.
 
-  **How will you deliver the required copy of the Massachusetts Appeals Court Criminal Docketing Statement to the other parties in this appeal?** 
-field: service_type
-dropdown:
-  - Email/E-file: email
-  - Mail: mail
-  - Hand delivery: hand 
+  You are required to provide a copy of this Massachusetts Appeals Court Criminal Docketing Statement to each attorney or self-represented party in this appeal. 
+
+  **How will you deliver the required copy of the Massachusetts Appeals Court Criminal Docketing Statement to the other parties in this appeal?**
+fields: 
+  - no label: service_type
+    datatype: radio
+    choices:
+      - Email/E-File: email
+      - Mail: mail
+      - Hand delivery: hand 
 
 ---
 id: parties to be served
