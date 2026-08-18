@@ -305,6 +305,9 @@ question: |
   Enter your BBO number
 fields:
   - BBO number: attorney_bbo
+validation code: |
+  if not (attorney_bbo.isdigit() and len(attorney_bbo) == 6):
+    validation_error("Enter a valid 6-digit BBO number.", field="attorney_bbo")
 ---
 id: case_info_screen
 question: |
@@ -368,6 +371,10 @@ fields:
   - Zip: users[0].address.zip
   - Telephone: users[0].phone_number
   - Email: users[0].email
+    datatype: email
+validation code: |
+  if not phone_number_is_valid(users[0].phone_number):
+    validation_error("Enter a valid phone number.", field="users[0].phone_number")
     
 ---
 id: info_judge1
@@ -808,7 +815,7 @@ question: |
 subquestion: |
   By signing your name, you agree to
   our terms and conditions.
-signature: user[0].signature
+signature: users[0].signature
 
 ---
 
