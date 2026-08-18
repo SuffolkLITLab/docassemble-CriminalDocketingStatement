@@ -830,7 +830,7 @@ subquestion: |
   Click the image to open it in a new tab. Click the "Edit answers" button
   to edit your answers.
 
-  ${ action_button_html(url_action('review_criminal_docketing_statement'), label='Edit answers', color='info') }
+  ${ action_button_html(url_action('review_all_sections'), label='Edit answers', color='info') }
   
   Remember to come back to this window to continue and sign your form.
 continue button field: criminal_docketing_statement_preview_question    
@@ -846,30 +846,14 @@ code: |
   addresses_to_search = [user.address for user in users.complete_elements()]
 ---
 id: criminal docketing statement review screen
-event: review_criminal_docketing_statement
+event: review_all_sections
 question: |
   Review your answers
 review:
-  - Edit: court_department
+  - Edit: filer_role
     button: |
-      **Court department name**:
-      ${ court_department }
-  - Edit: judge2_role
-    button: |
-      **Role of second judge**:
-      ${ judge2_role }
-  - Edit: judge3
-    button: |
-      **Third judge's name**:
-      ${ judge3 }
-  - Edit: related_appeals_case_name
-    button: |
-      **Name of related appeal case**:
-      ${ related_appeals_case_name }
-  - Edit: lower_docket_number
-    button: |
-      **Lower court docket number**:
-      ${ lower_docket_number }
+      **Filer role**:
+      ${ filer_role }
   - Edit: users.revisit
     button: |
       **Users**
@@ -877,42 +861,67 @@ review:
       % for item in users:
         * ${ item }
       % endfor
-  - Edit: service_date
+  - Edit: attorney_bbo
+    show if: filer_role == "attorney"
     button: |
-      **Date of service**:
-      ${ service_date }
-  - Edit: judge2
+      **BBO number**:
+      ${ attorney_bbo }
+  - Edit: client.name.first
+    show if: filer_role == "attorney"
     button: |
-      **Second judge's name**:
-      ${ judge2 }
-  - Edit: parties_to_be_served
+      **Client name**:
+      ${ client.name.full() }
+  - Edit: appellant_is_defendant
     button: |
-      **People to be served**:
-      ${ parties_to_be_served }
-  - Edit: related_appeals_docket
+      **Are you/your client the defendant?**:
+      ${ appellant_is_defendant }
+  - Edit: defendant_incarcerated
     button: |
-      **Docket number for related appeal**:
-      ${ related_appeals_docket }
-  - Edit: judge3_role
+      **Is the defendant incarcerated?**:
+      ${ defendant_incarcerated }
+  - Edit: institution_name
+    show if: defendant_incarcerated
     button: |
-      **Role of third judge**:
-      ${ judge3_role }
+      **Institution name**:
+      ${ institution_name }
+  - Edit: defendant_address
+    button: |
+      **Defendant address**:
+      ${ defendant_address }
+  - Edit: offense_information
+    button: |
+      **Offense information**:
+      ${ offense_information }
   - Edit: appeals_docket_number
     button: |
       **Docket number for appeal**:
       ${ appeals_docket_number }
-  - Edit: related_appeals_description
+  - Edit: lower_docket_number
     button: |
-      **Description of related appeal**:
-      ${ related_appeals_description }
+      **Lower court docket number**:
+      ${ lower_docket_number }
   - Edit: case_caption
     button: |
       **Title of the case**:
       ${ case_caption }
-  - Edit: record_impounded
+  - Edit: inst_type
     button: |
-      **Is record impounded?**:
-      ${ record_impounded }
+      **Court or agency**:
+      ${ inst_type }
+  - Edit: court_department
+    show if: inst_type == "Court"
+    button: |
+      **Court department name**:
+      ${ court_department }
+  - Edit: agency_name
+    show if: inst_type == "Agency"
+    button: |
+      **Agency name**:
+      ${ agency_name }
+  - Edit: nature_of_case
+    button: |
+      **Nature of the case**:
+      ${ nature_of_case }
   - Edit: judge1
     button: |
       **First judge's name**:
@@ -921,6 +930,71 @@ review:
     button: |
       **Role of first judge**:
       ${ judge1_role }
+  - Edit: judge2
+    button: |
+      **Second judge's name**:
+      ${ judge2 }
+  - Edit: judge2_role
+    button: |
+      **Role of second judge**:
+      ${ judge2_role }
+  - Edit: judge3
+    button: |
+      **Third judge's name**:
+      ${ judge3 }
+  - Edit: judge3_role
+    button: |
+      **Role of third judge**:
+      ${ judge3_role }
+  - Edit: record_impounded
+    button: |
+      **Is record impounded?**:
+      ${ record_impounded }
+  - Edit: impoundment_details
+    show if: record_impounded
+    button: |
+      **Impoundment authority**:
+      ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+  - Edit: nature_of_appeal
+    button: |
+      **Nature of the appeal**:
+      ${ comma_and_list(nature_of_appeal.true_values()) }
+  - Edit: appeal_taken_from
+    button: |
+      **Appeal taken from**:
+      ${ comma_and_list(appeal_taken_from.true_values()) }
+  - Edit: motion_suppress
+    button: |
+      **Motion to suppress?**:
+      ${ motion_suppress }
+  - Edit: sentence_stayed
+    button: |
+      **Sentence stayed?**:
+      ${ sentence_stayed }
+  - Edit: related_appeals_case_name
+    button: |
+      **Name of related appeal case**:
+      ${ related_appeals_case_name }
+  - Edit: related_appeals_docket
+    button: |
+      **Docket number for related appeal**:
+      ${ related_appeals_docket }
+  - Edit: related_appeals_description
+    button: |
+      **Description of related appeal**:
+      ${ related_appeals_description }
+  - Edit: service_type
+    button: |
+      **Method of service**:
+      ${ service_type }
+  - Edit: parties_to_be_served
+    button: |
+      **People to be served**:
+      ${ parties_to_be_served }
+  - Edit: service_date
+    button: |
+      **Date of service**:
+      ${ service_date }
 ---
 id: edit users
 continue button field: users.revisit
@@ -962,7 +1036,7 @@ subquestion: |
   
   Download and review your form below. Click the "Edit answers" button to fix any mistakes.
 
-  ${ action_button_html(url_action('review_criminal_docketing_statement'), label='Edit answers', color='info') }
+  ${ action_button_html(url_action('review_all_sections'), label='Edit answers', color='info') }
   
   
   ${ al_user_bundle.download_list_html() }
@@ -1005,6 +1079,236 @@ attachment:
   skip undefined: True
   docx template file: criminal_docketing_statement.docx
   tagged pdf: True
-
-
+---
+event: introduction
+code: |
+  force_ask('review_all_sections', forget_prior=True)
+---
+event: user_information
+code: |
+  force_ask('review_user_info_section', forget_prior=True)
+---
+event: defendant_info
+code: |
+  force_ask('review_defendant_section', forget_prior=True)
+---
+event: court_docket
+code: |
+  force_ask('review_court_docket_section', forget_prior=True)
+---
+event: judges
+code: |
+  force_ask('review_judges_section', forget_prior=True)
+---
+event: impoundment
+code: |
+  force_ask('review_impoundment_section', forget_prior=True)
+---
+event: appeal_info
+code: |
+  force_ask('review_appeal_section', forget_prior=True)
+---
+event: service
+code: |
+  force_ask('review_service_section', forget_prior=True)
+---
+event: signature
+code: |
+  force_ask('review_all_sections', forget_prior=True)
+---
+id: review user info section
+event: review_user_info_section
+question: |
+  Review: User information
+review:
+  - Edit: filer_role
+    button: |
+      **Filer role**:
+      ${ filer_role }
+  - Edit: users.revisit
+    button: |
+      **Name**:
+      ${ users[0].name.full() }
+  - Edit: attorney_bbo
+    show if: filer_role == "attorney"
+    button: |
+      **BBO number**:
+      ${ attorney_bbo }
+  - Edit: users[0].address.address
+    button: |
+      **Address**:
+      ${ users[0].address.block() }
+  - Edit: users[0].phone_number
+    button: |
+      **Phone**:
+      ${ users[0].phone_number }
+  - Edit: users[0].email
+    button: |
+      **Email**:
+      ${ users[0].email }
+  - Edit: client.name.first
+    show if: filer_role == "attorney"
+    button: |
+      **Client name**:
+      ${ client.name.full() }
+---
+id: review defendant section
+event: review_defendant_section
+question: |
+  Review: Defendant information
+review:
+  - Edit: appellant_is_defendant
+    button: |
+      **Are you/your client the defendant?**:
+      ${ appellant_is_defendant }
+  - Edit: defendant_incarcerated
+    button: |
+      **Is the defendant incarcerated?**:
+      ${ defendant_incarcerated }
+  - Edit: institution_name
+    show if: defendant_incarcerated
+    button: |
+      **Institution name**:
+      ${ institution_name }
+  - Edit: defendant_address
+    button: |
+      **Defendant address**:
+      ${ defendant_address }
+  - Edit: offense_information
+    button: |
+      **Offense information**:
+      ${ offense_information }
+---
+id: review court docket section
+event: review_court_docket_section
+question: |
+  Review: Trial court & docket details
+review:
+  - Edit: appeals_docket_number
+    button: |
+      **Appeals Court docket number**:
+      ${ appeals_docket_number }
+  - Edit: lower_docket_number
+    button: |
+      **Lower court docket number**:
+      ${ lower_docket_number }
+  - Edit: case_caption
+    button: |
+      **Case name**:
+      ${ case_caption }
+  - Edit: inst_type
+    button: |
+      **Court or agency**:
+      ${ inst_type }
+  - Edit: court_department
+    show if: inst_type == "Court"
+    button: |
+      **Court department**:
+      ${ court_department }
+  - Edit: agency_name
+    show if: inst_type == "Agency"
+    button: |
+      **Agency name**:
+      ${ agency_name }
+  - Edit: nature_of_case
+    button: |
+      **Nature of the case**:
+      ${ nature_of_case }
+---
+id: review judges section
+event: review_judges_section
+question: |
+  Review: Judge information
+review:
+  - Edit: judge1
+    button: |
+      **First judge's name**:
+      ${ judge1 }
+  - Edit: judge1_role
+    button: |
+      **Role of first judge**:
+      ${ judge1_role }
+  - Edit: judge2
+    button: |
+      **Second judge's name**:
+      ${ judge2 }
+  - Edit: judge2_role
+    button: |
+      **Role of second judge**:
+      ${ judge2_role }
+  - Edit: judge3
+    button: |
+      **Third judge's name**:
+      ${ judge3 }
+  - Edit: judge3_role
+    button: |
+      **Role of third judge**:
+      ${ judge3_role }
+---
+id: review impoundment section
+event: review_impoundment_section
+question: |
+  Review: Impoundment details
+review:
+  - Edit: record_impounded
+    button: |
+      **Is record impounded?**:
+      ${ record_impounded }
+  - Edit: impoundment_details
+    show if: record_impounded
+    button: |
+      **Impoundment authority**:
+      ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+---
+id: review appeal section
+event: review_appeal_section
+question: |
+  Review: Appeal details
+review:
+  - Edit: nature_of_appeal
+    button: |
+      **Nature of the appeal**:
+      ${ comma_and_list(nature_of_appeal.true_values()) }
+  - Edit: appeal_taken_from
+    button: |
+      **Appeal taken from**:
+      ${ comma_and_list(appeal_taken_from.true_values()) }
+  - Edit: motion_suppress
+    button: |
+      **Motion to suppress?**:
+      ${ motion_suppress }
+  - Edit: sentence_stayed
+    button: |
+      **Sentence stayed?**:
+      ${ sentence_stayed }
+  - Edit: related_appeals_case_name
+    button: |
+      **Related case name**:
+      ${ related_appeals_case_name }
+  - Edit: related_appeals_docket
+    button: |
+      **Related docket number**:
+      ${ related_appeals_docket }
+  - Edit: related_appeals_description
+    button: |
+      **Related matter description**:
+      ${ related_appeals_description }
+---
+id: review service section
+event: review_service_section
+question: |
+  Review: Certificate of Service
+review:
+  - Edit: service_type
+    button: |
+      **Method of service**:
+      ${ service_type }
+  - Edit: parties_to_be_served
+    button: |
+      **People to be served**:
+      ${ parties_to_be_served }
+  - Edit: service_date
+    button: |
+      **Date of service**:
+      ${ service_date }
 
