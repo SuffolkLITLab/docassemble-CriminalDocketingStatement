@@ -137,7 +137,7 @@ code: |
 
       if defendant_incarcerated:
         institution_name
-        defendant_address = users[0].address
+        defendant_address.address
       else:
         defendant_address = users[0].address
 
