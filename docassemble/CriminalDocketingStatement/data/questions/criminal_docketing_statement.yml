@@ -166,13 +166,13 @@ code: |
     info_judge2
     more_judges_2
   else:
-    judge2 = judge2_role = "N/A"
-    judge3 = judge3_role = "N/A"
+    judge2 = judge2_role = ""
+    judge3 = judge3_role = ""
 
   if has_judge2 and has_judge3:
     info_judge3
   else:
-    judge3 = judge3_role = "N/A"
+    judge3 = judge3_role = ""
 
   nav.set_section("impoundment") 
   record_impounded
@@ -245,7 +245,7 @@ id: filer_role_screen
 question: |
   Who is filing this Criminal Docketing Statement?
 fields:
-  - no label: filer_role
+  - Filer role: filer_role
     input type: radio
     choices:
       - I am an attorney representing the appellant: attorney
@@ -274,7 +274,7 @@ question: |
   Were you the defendant in the trial court case? 
   % endif
 fields:
-  - no label: appellant_is_defendant
+  - Are you/your client the defendant?: appellant_is_defendant
     datatype: yesnoradio
 ---
 id: defendant_incarcerated
@@ -289,7 +289,7 @@ question: |
   Is the defendant currently incarcerated?
   % endif
 fields:
-  - no label: defendant_incarcerated
+  - Is the defendant incarcerated?: defendant_incarcerated
     datatype: yesnoradio
 ---
 id: client_name_screen
@@ -399,8 +399,8 @@ id: more_judges_1
 question: |
   Is there another judge whose order or judgment you are appealing?
 fields:
-  - no label: has_judge2
-    datatype: yesnoradio   
+  - Another judge?: has_judge2
+    datatype: yesnoradio
 continue button field: more_judges_1
 ---
 id: info_judge2
@@ -425,8 +425,8 @@ id: more_judges_2
 question: |
   Is there another judge whose order or judgment you are appealing?
 fields:
-  - no label: has_judge3
-    datatype: yesnoradio   
+  - Another judge?: has_judge3
+    datatype: yesnoradio
 continue button field: more_judges_2
 ---
 id: info_judge3
@@ -735,7 +735,8 @@ subquestion: |
   What is the name of the case as it appears on trial court documents? 
 fields:
   - "Commonwealth v.": case_caption
-    hint: Usually the name of the person who was charged with a crime
+    help: |
+      Usually the name of the person who was charged with a crime
 ---
 id: related_appeals_same_parties
 question: |
@@ -790,7 +791,7 @@ subquestion: |
 
   **How will you deliver the required copy of the Massachusetts Appeals Court Criminal Docketing Statement to the other parties in this appeal?**
 fields: 
-  - no label: service_type
+  - Method of service: service_type
     datatype: radio
     choices:
       - Email/E-File: email
@@ -806,7 +807,7 @@ subquestion: |
   
   If you are serving more than one attorney or party, you may list more than one.
 fields:
-  - no label: parties_to_be_served
+  - People to be served: parties_to_be_served
     datatype: area
 ---
 
@@ -836,21 +837,17 @@ subquestion: |
   Remember to come back to this window to continue and sign your form.
 continue button field: criminal_docketing_statement_preview_question    
 ---
-code: |
-  # This is a placeholder for the addresses that will be searched
-  # for matching address to court. Edit if court venue is based on 
-  # a different address than the user's
-  addresses_to_search = [user.address for user in users.complete_elements()]
----
 id: criminal docketing statement review screen
 event: review_all_sections
 question: |
   Review your answers
 review:
+  - note: |
+      ## User information
   - Edit: filer_role
     button: |
       **Filer role**:
-      ${ filer_role }
+      ${ {"attorney": "Attorney", "pro_se": "Self-represented (pro se)"}.get(filer_role, filer_role) }
   - Edit: users.revisit
     button: |
       **Filer name**:
@@ -872,14 +869,16 @@ review:
     button: |
       **Client name**:
       ${ client.name.full() }
+  - note: |
+      ## Defendant information
   - Edit: appellant_is_defendant
     button: |
       **Are you/your client the defendant?**:
-      ${ appellant_is_defendant }
+      ${ "Yes" if appellant_is_defendant else "No" }
   - Edit: defendant_incarcerated
     button: |
       **Is the defendant incarcerated?**:
-      ${ defendant_incarcerated }
+      ${ "Yes" if defendant_incarcerated else "No" }
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -887,12 +886,18 @@ review:
       ${ institution_name }
   - Edit: defendant_address.address
     button: |
-      **Defendant address**:
-      ${ defendant_address if defined('defendant_address.address') else '' }
+      % if defendant_incarcerated:
+      **Institution address**:
+      % else:
+      **Current address**:
+      % endif
+      ${ defendant_address.on_one_line() if defined('defendant_address.address') else '' }
   - Edit: offense_information
     button: |
       **Offense information**:
       ${ offense_information }
+  - note: |
+      ## Trial court & docket details
   - Edit: appeals_docket_number
     button: |
       **Docket Numbers**
@@ -923,27 +928,40 @@ review:
       % elif nature_of_case == "Possession, Other":
       - Specify: ${ possession_other }
       % endif
+  - note: |
+      ## Judge information
   - Edit: judge1
     button: |
-      **Judge 1**: ${ judge1 } — ${ judge1_role }
+      **Judge 1**: ${ judge1 } - ${ judge1_role }
   - Edit: judge2
+    show if: has_judge2
     button: |
-      **Judge 2**: ${ judge2 } — ${ judge2_role }
+      **Judge 2**: ${ judge2 } - ${ judge2_role }
   - Edit: judge3
+    show if: has_judge2 and has_judge3
     button: |
-      **Judge 3**: ${ judge3 } — ${ judge3_role }
+      **Judge 3**: ${ judge3 } - ${ judge3_role }
+  - note: |
+      ## Impoundment details
   - Edit: record_impounded
     button: |
       **Impoundment**
 
-      - Record impounded: ${ record_impounded }
+      - Record impounded: ${ "Yes" if record_impounded else "No" }
       % if record_impounded:
-      - Entire case fully impounded: ${ fully_impounded }
+      - Entire case fully impounded: ${ "Yes" if fully_impounded else "No" }
       % if not fully_impounded:
       - Impounded documents: ${ impoundment_documents }
       % endif
-      - Authority: ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+      % if defined('impoundment_details'):
+      - Authority:
+      % for item in impoundment_details.true_values():
+          - ${ item }
+      % endfor
       % endif
+      % endif
+  - note: |
+      ## Appeal details
   - Edit: nature_of_appeal
     button: |
       **Nature of the appeal**:
@@ -951,23 +969,23 @@ review:
   - Edit: appeal_taken_from
     button: |
       **Appeal taken from**:
-      ${ comma_and_list(appeal_taken_from.true_values()) }
+      ${ comma_and_list([{"pretrial": "Pretrial Order", "jury": "Jury Trial", "non_jury": "Non-Jury Trial", "post_conviction": "Post-Conviction Order"}.get(v, v) for v in appeal_taken_from.true_values()]) }
   - Edit: motion_suppress
     button: |
       **Motion to Suppress**
 
-      - Filed: ${ motion_suppress }
+      - Filed: ${ "Yes" if motion_suppress else "No" }
       % if motion_suppress:
-      - Judge entered findings: ${ motion_findings }
+      - Judge entered findings: ${ "Yes" if motion_findings else "No" }
       % if motion_findings:
-      - Findings: ${ findings_type }
+      - Findings: ${ {"written": "Written", "transcribed": "Transcribed"}.get(findings_type, findings_type) }
       % endif
       % endif
   - Edit: sentence_stayed
     button: |
       **Stay of Execution**
 
-      - Sentence stayed: ${ sentence_stayed }
+      - Sentence stayed: ${ "Yes" if sentence_stayed else "No" }
       % if sentence_stayed:
       - Order date: ${ stay_order_date }
       - Judge: ${ stay_judge_name }
@@ -976,17 +994,19 @@ review:
     button: |
       **Related Appeals**
 
-      - Same parties: ${ related_appeals_parties }
-      - Same issues: ${ related_appeals_issues }
+      - Same parties: ${ "Yes" if related_appeals_parties else "No" }
+      - Same issues: ${ "Yes" if related_appeals_issues else "No" }
       % if related_appeals_parties or related_appeals_issues:
       - Case name: ${ related_appeals_case_name }
       - Docket number: ${ related_appeals_docket }
       - Description: ${ related_appeals_description }
       % endif
+  - note: |
+      ## Certificate of Service
   - Edit: service_type
     button: |
       **Method of service**:
-      ${ service_type }
+      ${ {"email": "Email/E-File", "mail": "Mail", "hand": "Hand delivery"}.get(service_type, service_type) }
   - Edit: parties_to_be_served
     button: |
       **People to be served**:
@@ -1118,7 +1138,7 @@ review:
   - Edit: filer_role
     button: |
       **Filer role**:
-      ${ filer_role }
+      ${ {"attorney": "Attorney", "pro_se": "Self-represented (pro se)"}.get(filer_role, filer_role) }
   - Edit: users.revisit
     button: |
       **Name**:
@@ -1149,11 +1169,11 @@ review:
   - Edit: appellant_is_defendant
     button: |
       **Are you/your client the defendant?**:
-      ${ appellant_is_defendant }
+      ${ "Yes" if appellant_is_defendant else "No" }
   - Edit: defendant_incarcerated
     button: |
       **Is the defendant incarcerated?**:
-      ${ defendant_incarcerated }
+      ${ "Yes" if defendant_incarcerated else "No" }
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -1161,8 +1181,12 @@ review:
       ${ institution_name }
   - Edit: defendant_address.address
     button: |
-      **Defendant address**:
-      ${ defendant_address if defined('defendant_address.address') else '' }
+      % if defendant_incarcerated:
+      **Institution address**:
+      % else:
+      **Current address**:
+      % endif
+      ${ defendant_address.on_one_line() if defined('defendant_address.address') else '' }
   - Edit: offense_information
     button: |
       **Offense information**:
@@ -1211,13 +1235,15 @@ question: |
 review:
   - Edit: judge1
     button: |
-      **Judge 1**: ${ judge1 } — ${ judge1_role }
+      **Judge 1**: ${ judge1 } - ${ judge1_role }
   - Edit: judge2
+    show if: has_judge2
     button: |
-      **Judge 2**: ${ judge2 } — ${ judge2_role }
+      **Judge 2**: ${ judge2 } - ${ judge2_role }
   - Edit: judge3
+    show if: has_judge2 and has_judge3
     button: |
-      **Judge 3**: ${ judge3 } — ${ judge3_role }
+      **Judge 3**: ${ judge3 } - ${ judge3_role }
 ---
 id: review impoundment section
 event: review_impoundment_section
@@ -1228,13 +1254,18 @@ review:
     button: |
       **Impoundment**
 
-      - Record impounded: ${ record_impounded }
+      - Record impounded: ${ "Yes" if record_impounded else "No" }
       % if record_impounded:
-      - Entire case fully impounded: ${ fully_impounded }
+      - Entire case fully impounded: ${ "Yes" if fully_impounded else "No" }
       % if not fully_impounded:
       - Impounded documents: ${ impoundment_documents }
       % endif
-      - Authority: ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+      % if defined('impoundment_details'):
+      - Authority:
+      % for item in impoundment_details.true_values():
+          - ${ item }
+      % endfor
+      % endif
       % endif
 ---
 id: review appeal section
@@ -1249,23 +1280,23 @@ review:
   - Edit: appeal_taken_from
     button: |
       **Appeal taken from**:
-      ${ comma_and_list(appeal_taken_from.true_values()) }
+      ${ comma_and_list([{"pretrial": "Pretrial Order", "jury": "Jury Trial", "non_jury": "Non-Jury Trial", "post_conviction": "Post-Conviction Order"}.get(v, v) for v in appeal_taken_from.true_values()]) }
   - Edit: motion_suppress
     button: |
       **Motion to Suppress**
 
-      - Filed: ${ motion_suppress }
+      - Filed: ${ "Yes" if motion_suppress else "No" }
       % if motion_suppress:
-      - Judge entered findings: ${ motion_findings }
+      - Judge entered findings: ${ "Yes" if motion_findings else "No" }
       % if motion_findings:
-      - Findings: ${ findings_type }
+      - Findings: ${ {"written": "Written", "transcribed": "Transcribed"}.get(findings_type, findings_type) }
       % endif
       % endif
   - Edit: sentence_stayed
     button: |
       **Stay of Execution**
 
-      - Sentence stayed: ${ sentence_stayed }
+      - Sentence stayed: ${ "Yes" if sentence_stayed else "No" }
       % if sentence_stayed:
       - Order date: ${ stay_order_date }
       - Judge: ${ stay_judge_name }
@@ -1274,8 +1305,8 @@ review:
     button: |
       **Related Appeals**
 
-      - Same parties: ${ related_appeals_parties }
-      - Same issues: ${ related_appeals_issues }
+      - Same parties: ${ "Yes" if related_appeals_parties else "No" }
+      - Same issues: ${ "Yes" if related_appeals_issues else "No" }
       % if related_appeals_parties or related_appeals_issues:
       - Case name: ${ related_appeals_case_name }
       - Docket number: ${ related_appeals_docket }
@@ -1290,7 +1321,7 @@ review:
   - Edit: service_type
     button: |
       **Method of service**:
-      ${ service_type }
+      ${ {"email": "Email/E-File", "mail": "Mail", "hand": "Hand delivery"}.get(service_type, service_type) }
   - Edit: parties_to_be_served
     button: |
       **People to be served**:
