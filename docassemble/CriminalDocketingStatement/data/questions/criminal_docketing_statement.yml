@@ -94,23 +94,23 @@ code: |
 
   nav.set_section("user_information")
   users.there_is_another = False
-  filer_role
+  al_person_answering
   users[0].name.first
-  if filer_role == "attorney":
+  if al_person_answering == "attorney":
     attorney_bbo
 
   
   users[0].address.address
   users[0].phone_number
 
-  if filer_role == "attorney":
+  if al_person_answering == "attorney":
     client.name.first
 
   nav.set_section("defendant_info")
   appellant_is_defendant
 
 
-  if filer_role == "attorney":
+  if al_person_answering == "attorney":
 
     if appellant_is_defendant:
       defendant_incarcerated
@@ -130,7 +130,7 @@ code: |
       else:
         defendant_address.address
 
-  else:  # pro_se
+  else:  # user
 
     if appellant_is_defendant:
       defendant_incarcerated
@@ -166,13 +166,13 @@ code: |
     info_judge2
     more_judges_2
   else:
-    judge2 = judge2_role = "N/A"
-    judge3 = judge3_role = "N/A"
+    judge2 = judge2_role = ""
+    judge3 = judge3_role = ""
 
   if has_judge2 and has_judge3:
     info_judge3
   else:
-    judge3 = judge3_role = "N/A"
+    judge3 = judge3_role = ""
 
   nav.set_section("impoundment") 
   record_impounded
@@ -241,21 +241,24 @@ terms:
     The opposing party of the appellant, that has also decided to appeal the trial court's decision for different reasons than the original appeal.
 
 ---
+code: |
+  al_person_answering_labels = {"user": "Self-represented litigant", attorney": "Attorney"}
+---
 id: filer_role_screen
 question: |
-  Who is filing this Criminal Docketing Statement?
+  Are you filling out this form for yourself?
 fields:
-  - no label: filer_role
+  - I am filling out this form as a: al_person_answering
     input type: radio
     choices:
-      - I am an attorney representing the appellant: attorney
-      - I am self-represented (pro se) and I am the appellant: pro_se
+      code: |
+        [{k: v} for k, v in al_person_answering_labels.items()]
 ---
 id: filer_name_screen
 question: |
   What is your name?
 subquestion: |
-  % if filer_role == "attorney":
+  % if al_person_answering == "attorney":
   If you are the attorney representing the appellant, please enter your name.
   % else:
   Enter **your** name.
@@ -268,28 +271,44 @@ fields:
 ---
 id: defendant_questions
 question: |
-  % if filer_role == "attorney":
+  % if al_person_answering == "attorney":
   Was your client the defendant in the trial court case?
   % else: 
   Were you the defendant in the trial court case? 
   % endif
 fields:
-  - no label: appellant_is_defendant
+  - label: |
+      % if al_person_answering == "attorney":
+      Was your client the defendant?
+      % else:
+      Were you the defendant?
+      % endif
+    field: appellant_is_defendant
     datatype: yesnoradio
 ---
 id: defendant_incarcerated
 question: |
-  % if filer_role == "attorney" and appellant_is_defendant:
+  % if al_person_answering == "attorney" and appellant_is_defendant:
   Is your client currently incarcerated?
-  % elif filer_role == "attorney" and not appellant_is_defendant:
+  % elif al_person_answering == "attorney" and not appellant_is_defendant:
   Is the defendant currently incarcerated?
-  % elif filer_role == "pro_se" and appellant_is_defendant:
+  % elif al_person_answering == "user" and appellant_is_defendant:
   Are you currently incarcerated?
   % else:
   Is the defendant currently incarcerated?
   % endif
 fields:
-  - no label: defendant_incarcerated
+  - label: |
+      % if al_person_answering == "attorney" and appellant_is_defendant:
+      Is your client incarcerated?
+      % elif al_person_answering == "attorney" and not appellant_is_defendant:
+      Is the defendant incarcerated?
+      % elif al_person_answering == "user" and appellant_is_defendant:
+      Are you incarcerated?
+      % else:
+      Is the defendant incarcerated?
+      % endif
+    field: defendant_incarcerated
     datatype: yesnoradio
 ---
 id: client_name_screen
@@ -399,8 +418,8 @@ id: more_judges_1
 question: |
   Is there another judge whose order or judgment you are appealing?
 fields:
-  - no label: has_judge2
-    datatype: yesnoradio   
+  - Another judge?: has_judge2
+    datatype: yesnoradio
 continue button field: more_judges_1
 ---
 id: info_judge2
@@ -425,8 +444,8 @@ id: more_judges_2
 question: |
   Is there another judge whose order or judgment you are appealing?
 fields:
-  - no label: has_judge3
-    datatype: yesnoradio   
+  - Another judge?: has_judge3
+    datatype: yesnoradio
 continue button field: more_judges_2
 ---
 id: info_judge3
@@ -579,6 +598,9 @@ fields:
       - Defendant's Direct Appeal
       - Defendant's Collateral Appeal
 ---
+code: |
+  appeal_taken_from_labels = {"pretrial": "Pretrial Order", "jury": "Jury Trial", "non_jury": "Non-Jury Trial", "post_conviction": "Post-Conviction Order"}
+---
 id: appeal_taken_from
 question: |
    What type of decision are you appealing?
@@ -596,6 +618,9 @@ fields:
 validation code: |
   if appeal_taken_from['jury'] and appeal_taken_from['non_jury']:
     validation_error("A single trial can't be both a jury trial and a non-jury trial. Please select only one.", field="appeal_taken_from")
+---
+code: |
+  findings_type_labels = {"written": "Written", "transcribed": "Transcribed"}
 ---
 id: motion_suppress
 question: |
@@ -626,8 +651,8 @@ fields:
   - Are the findings written or transcribed?: findings_type
     datatype: radio
     choices:
-      - Written: written
-      - Transcribed: transcribed
+      code: |
+        [{k: v} for k, v in findings_type_labels.items()]
     show if:
       variable: motion_findings
       is: True
@@ -651,19 +676,19 @@ question: |
   Current address
   % endif
 subquestion: |
-  % if defendant_incarcerated and filer_role == "attorney" and appellant_is_defendant:
+  % if defendant_incarcerated and al_person_answering == "attorney" and appellant_is_defendant:
   Enter the address of the institution where your client is incarcerated.
-  % elif defendant_incarcerated and filer_role == "attorney" and not appellant_is_defendant:
+  % elif defendant_incarcerated and al_person_answering == "attorney" and not appellant_is_defendant:
   Enter the address of the institution where the defendant is incarcerated.
-  % elif defendant_incarcerated and filer_role == "pro_se" and appellant_is_defendant:
+  % elif defendant_incarcerated and al_person_answering == "user" and appellant_is_defendant:
   Enter the address of the institution where you are incarcerated.
-  % elif defendant_incarcerated and filer_role == "pro_se" and not appellant_is_defendant:
+  % elif defendant_incarcerated and al_person_answering == "user" and not appellant_is_defendant:
   Enter the address of the institution where the defendant is incarcerated.
-  % elif not defendant_incarcerated and filer_role == "attorney" and appellant_is_defendant:
+  % elif not defendant_incarcerated and al_person_answering == "attorney" and appellant_is_defendant:
   Enter your client's current address.
-  % elif not defendant_incarcerated and filer_role == "attorney" and not appellant_is_defendant:
+  % elif not defendant_incarcerated and al_person_answering == "attorney" and not appellant_is_defendant:
   Enter the defendant's current address.
-  % elif not defendant_incarcerated and filer_role == "pro_se" and appellant_is_defendant:
+  % elif not defendant_incarcerated and al_person_answering == "user" and appellant_is_defendant:
   Enter your current address.
   % else:
   Enter the defendant's current address.
@@ -681,7 +706,7 @@ fields:
 # question: |
 #   Institution name
 # subquestion: |
-#   % if filer_role == "attorney":
+#   % if al_person_answering == "attorney":
 #   Enter the name of the institution where your client is incarcerated
 #   % else: 
 #   Enter the name of the institution where you are incarcerated
@@ -693,11 +718,11 @@ id: defendant_institution
 question: |
   Institution information
 subquestion: |
-  % if filer_role == "attorney" and appellant_is_defendant:
+  % if al_person_answering == "attorney" and appellant_is_defendant:
   Enter the name of the institution where your client is incarcerated.
-  % elif filer_role == "attorney" and not appellant_is_defendant:
+  % elif al_person_answering == "attorney" and not appellant_is_defendant:
   Enter the name of the institution where the defendant is incarcerated.
-  % elif filer_role == "pro_se" and appellant_is_defendant:
+  % elif al_person_answering == "user" and appellant_is_defendant:
   Enter the name of the institution where you are incarcerated.
   % else:
   Enter the name of the institution where the defendant is incarcerated.
@@ -735,7 +760,8 @@ subquestion: |
   What is the name of the case as it appears on trial court documents? 
 fields:
   - "Commonwealth v.": case_caption
-    hint: Usually the name of the person who was charged with a crime
+    help: |
+      Usually the name of the person who was charged with a crime
 ---
 id: related_appeals_same_parties
 question: |
@@ -790,7 +816,7 @@ subquestion: |
 
   **How will you deliver the required copy of the Massachusetts Appeals Court Criminal Docketing Statement to the other parties in this appeal?**
 fields: 
-  - no label: service_type
+  - Method of service: service_type
     datatype: radio
     choices:
       - Email/E-File: email
@@ -806,7 +832,7 @@ subquestion: |
   
   If you are serving more than one attorney or party, you may list more than one.
 fields:
-  - no label: parties_to_be_served
+  - People to be served: parties_to_be_served
     datatype: area
 ---
 
@@ -836,21 +862,17 @@ subquestion: |
   Remember to come back to this window to continue and sign your form.
 continue button field: criminal_docketing_statement_preview_question    
 ---
-code: |
-  # This is a placeholder for the addresses that will be searched
-  # for matching address to court. Edit if court venue is based on 
-  # a different address than the user's
-  addresses_to_search = [user.address for user in users.complete_elements()]
----
 id: criminal docketing statement review screen
 event: review_all_sections
 question: |
   Review your answers
 review:
-  - Edit: filer_role
+  - note: |
+      ## User information
+  - Edit: al_person_answering
     button: |
       **Filer role**:
-      ${ filer_role }
+      ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
   - Edit: users.revisit
     button: |
       **Filer name**:
@@ -863,23 +885,25 @@ review:
       - Phone: ${ users[0].phone_number }
       - Email: ${ users[0].email }
   - Edit: attorney_bbo
-    show if: filer_role == "attorney"
+    show if: al_person_answering == "attorney"
     button: |
       **BBO number**:
       ${ attorney_bbo }
   - Edit: client.name.first
-    show if: filer_role == "attorney"
+    show if: al_person_answering == "attorney"
     button: |
       **Client name**:
       ${ client.name.full() }
+  - note: |
+      ## Defendant information
   - Edit: appellant_is_defendant
     button: |
       **Are you/your client the defendant?**:
-      ${ appellant_is_defendant }
+      ${ word(yesno(appellant_is_defendant)) }
   - Edit: defendant_incarcerated
     button: |
       **Is the defendant incarcerated?**:
-      ${ defendant_incarcerated }
+      ${ word(yesno(defendant_incarcerated)) }
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -887,12 +911,18 @@ review:
       ${ institution_name }
   - Edit: defendant_address.address
     button: |
-      **Defendant address**:
-      ${ defendant_address if defined('defendant_address.address') else '' }
+      % if defendant_incarcerated:
+      **Institution address**:
+      % else:
+      **Current address**:
+      % endif
+      ${ defendant_address.on_one_line() if defined('defendant_address.address') else '' }
   - Edit: offense_information
     button: |
       **Offense information**:
       ${ offense_information }
+  - note: |
+      ## Trial court & docket details
   - Edit: appeals_docket_number
     button: |
       **Docket Numbers**
@@ -923,27 +953,40 @@ review:
       % elif nature_of_case == "Possession, Other":
       - Specify: ${ possession_other }
       % endif
+  - note: |
+      ## Judge information
   - Edit: judge1
     button: |
-      **Judge 1**: ${ judge1 } — ${ judge1_role }
+      **Judge 1**: ${ judge1 } - ${ judge1_role }
   - Edit: judge2
+    show if: has_judge2
     button: |
-      **Judge 2**: ${ judge2 } — ${ judge2_role }
+      **Judge 2**: ${ judge2 } - ${ judge2_role }
   - Edit: judge3
+    show if: has_judge2 and has_judge3
     button: |
-      **Judge 3**: ${ judge3 } — ${ judge3_role }
+      **Judge 3**: ${ judge3 } - ${ judge3_role }
+  - note: |
+      ## Impoundment details
   - Edit: record_impounded
     button: |
       **Impoundment**
 
-      - Record impounded: ${ record_impounded }
+      - Record impounded: ${ word(yesno(record_impounded)) }
       % if record_impounded:
-      - Entire case fully impounded: ${ fully_impounded }
+      - Entire case fully impounded: ${ word(yesno(fully_impounded)) }
       % if not fully_impounded:
       - Impounded documents: ${ impoundment_documents }
       % endif
-      - Authority: ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+      % if defined('impoundment_details'):
+      - Authority:
+      % for item in impoundment_details.true_values():
+          - ${ item }
+      % endfor
       % endif
+      % endif
+  - note: |
+      ## Appeal details
   - Edit: nature_of_appeal
     button: |
       **Nature of the appeal**:
@@ -951,23 +994,23 @@ review:
   - Edit: appeal_taken_from
     button: |
       **Appeal taken from**:
-      ${ comma_and_list(appeal_taken_from.true_values()) }
+      ${ comma_and_list([appeal_taken_from_labels.get(v, v) for v in appeal_taken_from.true_values()]) }
   - Edit: motion_suppress
     button: |
       **Motion to Suppress**
 
-      - Filed: ${ motion_suppress }
+      - Filed: ${ word(yesno(motion_suppress)) }
       % if motion_suppress:
-      - Judge entered findings: ${ motion_findings }
+      - Judge entered findings: ${ word(yesno(motion_findings)) }
       % if motion_findings:
-      - Findings: ${ findings_type }
+      - Findings: ${ findings_type_labels.get(findings_type, findings_type) }
       % endif
       % endif
   - Edit: sentence_stayed
     button: |
       **Stay of Execution**
 
-      - Sentence stayed: ${ sentence_stayed }
+      - Sentence stayed: ${ word(yesno(sentence_stayed)) }
       % if sentence_stayed:
       - Order date: ${ stay_order_date }
       - Judge: ${ stay_judge_name }
@@ -976,17 +1019,19 @@ review:
     button: |
       **Related Appeals**
 
-      - Same parties: ${ related_appeals_parties }
-      - Same issues: ${ related_appeals_issues }
+      - Same parties: ${ word(yesno(related_appeals_parties)) }
+      - Same issues: ${ word(yesno(related_appeals_issues)) }
       % if related_appeals_parties or related_appeals_issues:
       - Case name: ${ related_appeals_case_name }
       - Docket number: ${ related_appeals_docket }
       - Description: ${ related_appeals_description }
       % endif
+  - note: |
+      ## Certificate of Service
   - Edit: service_type
     button: |
       **Method of service**:
-      ${ service_type }
+      ${ {"email": "Email/E-File", "mail": "Mail", "hand": "Hand delivery"}.get(service_type, service_type) }
   - Edit: parties_to_be_served
     button: |
       **People to be served**:
@@ -1115,16 +1160,16 @@ event: review_user_info_section
 question: |
   Review: User information
 review:
-  - Edit: filer_role
+  - Edit: al_person_answering
     button: |
       **Filer role**:
-      ${ filer_role }
+      ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
   - Edit: users.revisit
     button: |
       **Name**:
       ${ users[0].name.full() }
   - Edit: attorney_bbo
-    show if: filer_role == "attorney"
+    show if: al_person_answering == "attorney"
     button: |
       **BBO number**:
       ${ attorney_bbo }
@@ -1136,7 +1181,7 @@ review:
       - Phone: ${ users[0].phone_number }
       - Email: ${ users[0].email }
   - Edit: client.name.first
-    show if: filer_role == "attorney"
+    show if: al_person_answering == "attorney"
     button: |
       **Client name**:
       ${ client.name.full() }
@@ -1149,11 +1194,11 @@ review:
   - Edit: appellant_is_defendant
     button: |
       **Are you/your client the defendant?**:
-      ${ appellant_is_defendant }
+      ${ word(yesno(appellant_is_defendant)) }
   - Edit: defendant_incarcerated
     button: |
       **Is the defendant incarcerated?**:
-      ${ defendant_incarcerated }
+      ${ word(yesno(defendant_incarcerated)) }
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -1161,8 +1206,12 @@ review:
       ${ institution_name }
   - Edit: defendant_address.address
     button: |
-      **Defendant address**:
-      ${ defendant_address if defined('defendant_address.address') else '' }
+      % if defendant_incarcerated:
+      **Institution address**:
+      % else:
+      **Current address**:
+      % endif
+      ${ defendant_address.on_one_line() if defined('defendant_address.address') else '' }
   - Edit: offense_information
     button: |
       **Offense information**:
@@ -1211,13 +1260,15 @@ question: |
 review:
   - Edit: judge1
     button: |
-      **Judge 1**: ${ judge1 } — ${ judge1_role }
+      **Judge 1**: ${ judge1 } - ${ judge1_role }
   - Edit: judge2
+    show if: has_judge2
     button: |
-      **Judge 2**: ${ judge2 } — ${ judge2_role }
+      **Judge 2**: ${ judge2 } - ${ judge2_role }
   - Edit: judge3
+    show if: has_judge2 and has_judge3
     button: |
-      **Judge 3**: ${ judge3 } — ${ judge3_role }
+      **Judge 3**: ${ judge3 } - ${ judge3_role }
 ---
 id: review impoundment section
 event: review_impoundment_section
@@ -1228,13 +1279,18 @@ review:
     button: |
       **Impoundment**
 
-      - Record impounded: ${ record_impounded }
+      - Record impounded: ${ word(yesno(record_impounded)) }
       % if record_impounded:
-      - Entire case fully impounded: ${ fully_impounded }
+      - Entire case fully impounded: ${ word(yesno(fully_impounded)) }
       % if not fully_impounded:
       - Impounded documents: ${ impoundment_documents }
       % endif
-      - Authority: ${ comma_and_list(impoundment_details.true_values()) if defined('impoundment_details') else '' }
+      % if defined('impoundment_details'):
+      - Authority:
+      % for item in impoundment_details.true_values():
+          - ${ item }
+      % endfor
+      % endif
       % endif
 ---
 id: review appeal section
@@ -1249,23 +1305,23 @@ review:
   - Edit: appeal_taken_from
     button: |
       **Appeal taken from**:
-      ${ comma_and_list(appeal_taken_from.true_values()) }
+      ${ comma_and_list([appeal_taken_from_labels.get(v, v) for v in appeal_taken_from.true_values()]) }
   - Edit: motion_suppress
     button: |
       **Motion to Suppress**
 
-      - Filed: ${ motion_suppress }
+      - Filed: ${ word(yesno(motion_suppress)) }
       % if motion_suppress:
-      - Judge entered findings: ${ motion_findings }
+      - Judge entered findings: ${ word(yesno(motion_findings)) }
       % if motion_findings:
-      - Findings: ${ findings_type }
+      - Findings: ${ findings_type_labels.get(findings_type, findings_type) }
       % endif
       % endif
   - Edit: sentence_stayed
     button: |
       **Stay of Execution**
 
-      - Sentence stayed: ${ sentence_stayed }
+      - Sentence stayed: ${ word(yesno(sentence_stayed)) }
       % if sentence_stayed:
       - Order date: ${ stay_order_date }
       - Judge: ${ stay_judge_name }
@@ -1274,8 +1330,8 @@ review:
     button: |
       **Related Appeals**
 
-      - Same parties: ${ related_appeals_parties }
-      - Same issues: ${ related_appeals_issues }
+      - Same parties: ${ word(yesno(related_appeals_parties)) }
+      - Same issues: ${ word(yesno(related_appeals_issues)) }
       % if related_appeals_parties or related_appeals_issues:
       - Case name: ${ related_appeals_case_name }
       - Docket number: ${ related_appeals_docket }
@@ -1290,7 +1346,7 @@ review:
   - Edit: service_type
     button: |
       **Method of service**:
-      ${ service_type }
+      ${ {"email": "Email/E-File", "mail": "Mail", "hand": "Hand delivery"}.get(service_type, service_type) }
   - Edit: parties_to_be_served
     button: |
       **People to be served**:
