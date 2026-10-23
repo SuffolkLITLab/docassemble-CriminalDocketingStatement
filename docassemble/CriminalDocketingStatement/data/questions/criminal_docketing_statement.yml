@@ -5,6 +5,7 @@ include:
   - docassemble.ALAnyState:any_state.yml
   - docassemble.ALMassachusetts:al_massachusetts.yml
   - docassemble.MassAccess:massaccess.yml
+  - efiling.yml
 ---
 metadata:
   title: >-
@@ -95,6 +96,14 @@ code: |
   nav.set_section("user_information")
   users.there_is_another = False
   al_person_answering
+  if can_check_efile:
+    tyler_login
+    if not appeals_case_search.case_was_found:
+      case_not_found_kickout
+    appeals_docket_number = appeals_case_search.found_case.docket_number
+    previous_case_id = appeals_case_search.found_case.tracking_id
+    add_appeals_existing_users
+    lead_contact = users[0]
   users[0].name.first
   if al_person_answering == "attorney":
     attorney_bbo
@@ -154,6 +163,7 @@ code: |
   
   nav.set_section("court_docket")
   appeals_docket_number
+  lower_docket_number
   case_caption
   inst_type 
   nature_of_case
@@ -209,6 +219,10 @@ code: |
   criminal_docketing_statement_intro
   interview_order_criminal_docketing_statement
   signature_date
+  if can_check_efile:
+    criminal_docketing_statement_attachment.completed
+    all_required_screens_shown
+    ready_to_efile
   # Store anonymous data for analytics / statistics
   store_variables_snapshot(
       persistent=True,
@@ -242,13 +256,13 @@ terms:
 
 ---
 code: |
-  al_person_answering_labels = {"user": "Self-represented litigant", attorney": "Attorney"}
+  al_person_answering_labels = {"user": "Self-represented litigant", "attorney": "Attorney"}
 ---
 id: filer_role_screen
 question: |
   Are you filling out this form for yourself?
 fields:
-  - I am filling out this form as a: al_person_answering
+  - I am filing as a: al_person_answering
     input type: radio
     choices:
       code: |
@@ -335,6 +349,9 @@ subquestion: |
     Note: these two are different  
 fields:
   - Appeals Court docket number: appeals_docket_number
+    show if:
+      code: |
+        not showifdef('can_check_efile')
   - Lower court docket number: lower_docket_number
 terms: 
   Appeals Court docket number: |
@@ -870,13 +887,21 @@ review:
   - note: |
       ## User information
   - Edit: al_person_answering
+    show if: not showifdef('can_check_efile')
     button: |
       **Filer role**:
       ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
+  - note: |
+      **Filer role**: ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
+    show if: showifdef('can_check_efile')
   - Edit: users.revisit
+    show if: not showifdef('can_check_efile')
     button: |
       **Filer name**:
       ${ users[0].name.full() }
+  - note: |
+      **Filer name** (from the court's record): ${ users[0].name.full() }
+    show if: showifdef('can_check_efile')
   - Edit: users[0].address.address
     button: |
       **Contact Information**
@@ -897,13 +922,21 @@ review:
   - note: |
       ## Defendant information
   - Edit: appellant_is_defendant
+    show if: not showifdef('can_check_efile')
     button: |
       **Are you/your client the defendant?**:
       ${ word(yesno(appellant_is_defendant)) }
+  - note: |
+      **Are you the defendant?**: ${ word(yesno(appellant_is_defendant)) }
+    show if: showifdef('can_check_efile')
   - Edit: defendant_incarcerated
+    show if: not showifdef('can_check_efile')
     button: |
       **Is the defendant incarcerated?**:
       ${ word(yesno(defendant_incarcerated)) }
+  - note: |
+      **Is the defendant incarcerated?**: ${ word(yesno(defendant_incarcerated)) }
+    show if: showifdef('can_check_efile')
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -924,10 +957,18 @@ review:
   - note: |
       ## Trial court & docket details
   - Edit: appeals_docket_number
+    show if: not showifdef('can_check_efile')
     button: |
       **Docket Numbers**
 
       - Appeals Court docket number: ${ appeals_docket_number }
+      - Lower court docket number: ${ lower_docket_number }
+  - Edit: lower_docket_number
+    show if: showifdef('can_check_efile')
+    button: |
+      **Docket Numbers**
+
+      - Appeals Court docket number (from the court's record): ${ appeals_docket_number }
       - Lower court docket number: ${ lower_docket_number }
   - Edit: case_caption
     button: |
@@ -1076,10 +1117,18 @@ subquestion: |
   Download and review your form below. Click the "Edit answers" button to fix any mistakes.
 
   ${ action_button_html(url_action('review_all_sections'), label='Edit answers', color='info') }
-  
-  
+
+  % if defined('efile') and efile:
+  Your docketing statement was sent to the Appeals Court. You will get an email from eFileMA when the clerk accepts or rejects it.
+
+  **E-filing does not send a copy to the other parties.** You still need to send them a copy the way you described in your certificate of service.
+  % elif can_check_efile and ready_to_efile:
+  **Your form is not filed yet.** Click **E-File** to send it to the Appeals Court.
+
+  ${ action_button_html(url_ask([{'recompute': ['efile']}]), label='E-File', icon='file-export', id_tag='efile-button') }
+  % endif
+
   ${ al_user_bundle.download_list_html() }
-  
 
   ${ al_user_bundle.send_button_html(show_editable_checkbox=True) }
 
@@ -1161,13 +1210,21 @@ question: |
   Review: User information
 review:
   - Edit: al_person_answering
+    show if: not showifdef('can_check_efile')
     button: |
       **Filer role**:
       ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
+  - note: |
+      **Filer role**: ${ al_person_answering_labels.get(al_person_answering, al_person_answering) }
+    show if: showifdef('can_check_efile')
   - Edit: users.revisit
+    show if: not showifdef('can_check_efile')
     button: |
-      **Name**:
+      **Filer name**:
       ${ users[0].name.full() }
+  - note: |
+      **Filer name** (from the court's record): ${ users[0].name.full() }
+    show if: showifdef('can_check_efile')
   - Edit: attorney_bbo
     show if: al_person_answering == "attorney"
     button: |
@@ -1192,13 +1249,21 @@ question: |
   Review: Defendant information
 review:
   - Edit: appellant_is_defendant
+    show if: not showifdef('can_check_efile')
     button: |
       **Are you/your client the defendant?**:
       ${ word(yesno(appellant_is_defendant)) }
+  - note: |
+      **Are you the defendant?**: ${ word(yesno(appellant_is_defendant)) }
+    show if: showifdef('can_check_efile')
   - Edit: defendant_incarcerated
+    show if: not showifdef('can_check_efile')
     button: |
       **Is the defendant incarcerated?**:
       ${ word(yesno(defendant_incarcerated)) }
+  - note: |
+      **Is the defendant incarcerated?**: ${ word(yesno(defendant_incarcerated)) }
+    show if: showifdef('can_check_efile')
   - Edit: institution_name
     show if: defendant_incarcerated
     button: |
@@ -1223,10 +1288,18 @@ question: |
   Review: Trial court & docket details
 review:
   - Edit: appeals_docket_number
+    show if: not showifdef('can_check_efile')
     button: |
       **Docket Numbers**
 
       - Appeals Court docket number: ${ appeals_docket_number }
+      - Lower court docket number: ${ lower_docket_number }
+  - Edit: lower_docket_number
+    show if: showifdef('can_check_efile')
+    button: |
+      **Docket Numbers**
+
+      - Appeals Court docket number (from the court's record): ${ appeals_docket_number }
       - Lower court docket number: ${ lower_docket_number }
   - Edit: case_caption
     button: |
