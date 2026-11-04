@@ -100,6 +100,7 @@ code: |
     tyler_login
     if not appeals_case_search.case_was_found:
       case_not_found_kickout
+  if can_check_efile:
     appeals_docket_number = appeals_case_search.found_case.docket_number
     previous_case_id = appeals_case_search.found_case.tracking_id
     add_appeals_existing_users
@@ -210,6 +211,16 @@ code: |
   
   interview_order_criminal_docketing_statement = True
 ---
+# Tyler's appeals case needs the lower court info, even when filing into an existing appeal
+depends on:
+  - case_caption
+  - lower_docket_number
+  - judge1
+code: |
+  lower_court_case.title = "Commonwealth v. " + case_caption
+  lower_court_case.docket_number = lower_docket_number
+  lower_court_case.judge = judge1
+---
 comment: |
   This block includes the logic for standalone interviews.
   Delete mandatory: True to include in another interview
@@ -220,6 +231,10 @@ code: |
   interview_order_criminal_docketing_statement
   signature_date
   if can_check_efile:
+    lower_court_case.title
+    lower_court_case.docket_number
+    lower_court_case.judge
+    tyler_payment_id
     criminal_docketing_statement_attachment.completed
     all_required_screens_shown
     ready_to_efile
@@ -1136,6 +1151,7 @@ progress: 100
 ---
 objects: 
   - defendant_address: ALAddress
+  - lower_court_case: DAObject
   - client: Individual
   - defendant: Individual
 ---
@@ -1167,6 +1183,7 @@ attachment:
   skip undefined: True
   docx template file: criminal_docketing_statement.docx
   tagged pdf: True
+  pdfa: True
 ---
 event: introduction
 code: |
