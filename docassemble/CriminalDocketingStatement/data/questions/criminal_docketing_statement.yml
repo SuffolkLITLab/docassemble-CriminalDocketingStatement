@@ -150,7 +150,10 @@ code: |
         institution_name
         defendant_address.address
       else:
-        defendant_address.address
+        if can_check_efile:
+          defendant_address = users[0].address.copy_deep('defendant_address')
+        else:
+          defendant_address.address
 
     else:
       defendant_incarcerated
@@ -166,7 +169,7 @@ code: |
   nav.set_section("court_docket")
   appeals_docket_number
   lower_docket_number
-  case_caption
+  case_title
   inst_type 
   nature_of_case
   
@@ -214,11 +217,11 @@ code: |
 ---
 # Tyler's appeals case needs the lower court info, even when filing into an existing appeal
 depends on:
-  - case_caption
+  - case_title
   - lower_docket_number
   - judge1
 code: |
-  lower_court_case.title = "Commonwealth v. " + case_caption
+  lower_court_case.title = case_title
   lower_court_case.docket_number = lower_docket_number
   lower_court_case.judge = judge1
 ---
@@ -821,6 +824,13 @@ fields:
       variable: sentence_stayed
       is: true
 ---
+id: case title
+code: |
+  if can_check_efile:
+    case_title = appeals_case_search.found_case.title
+  else:
+    case_title = "Commonwealth v. " + case_caption
+---
 id: case_caption
 question: |
   Case name
@@ -1026,9 +1036,10 @@ review:
       - Appeals Court docket number (from the court's record): ${ appeals_docket_number }
       - Lower court docket number: ${ lower_docket_number }
   - Edit: case_caption
+    show if: not showifdef('can_check_efile')
     button: |
       **Title of the case**:
-      ${ case_caption }
+      ${ 'Commonwealth v. ' + case_caption if defined('case_caption') else '' }
   - Edit: inst_type
     button: |
       **Court or Agency**
@@ -1359,9 +1370,10 @@ review:
       - Appeals Court docket number (from the court's record): ${ appeals_docket_number }
       - Lower court docket number: ${ lower_docket_number }
   - Edit: case_caption
+    show if: not showifdef('can_check_efile')
     button: |
       **Case name**:
-      ${ case_caption }
+      ${ 'Commonwealth v. ' + case_caption if defined('case_caption') else '' }
   - Edit: inst_type
     button: |
       **Court or Agency**
